@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="HandheldFriendly" content="true" />
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <h1>Sensor Box</h1>
+    <div id="dataArea">Awaiting data...</div>
+    Update period: <select id="updatePeriod">
+        <option>10s</option>
+        <option>10min</option>
+        <option>1hr</option>
+        <option>3hr</option>
+    </select>
+    <button onclick="changePeriod()">Change</button>
+    <div id="plotAreaTemperature" style="width:600px;height:300px;"></div>
+    <div id="plotAreaHumidity" style="width:600px;height:300px;"></div>
+    <div id="plotAreaPressure" style="width:600px;height:300px;"></div>
+    <script>
+        var socket = io();
+        //var socket = io.connect('https://samilkorkmaz.com', {secure: true}); //remote url
+        
+        function changePeriod() {
+            const i = document.getElementById("updatePeriod").selectedIndex;
+            const updatePeriod = document.getElementById("updatePeriod").options[i].text;
+            alert("Update period " + updatePeriod + " will be in effect after next data update.");
+            socket.emit('changeUpdatePeriod', {value: updatePeriod});
+        }
+
+        const plotDataFromServerEventName = 'plotDataFromServer';
+        const lastDataFromServerEventName = 'lastDataFromServer';
+
+        var plotAreaTemperature = document.getElementById('plotAreaTemperature');
+        var plotAreaHumidity = document.getElementById('plotAreaHumidity');
+        var plotAreaPressure = document.getElementById('plotAreaPressure');
+        var dataArea = document.getElementById('dataArea');
+        
+        socket.on(plotDataFromServerEventName, function (data) {
+            Plotly.newPlot(plotAreaTemperature, [{
+                x: data.temperature.x, y: data.temperature.y,
+                mode: 'lines+markers',
+                marker: {
+                    color: 'rgb(255, 0, 0)',
+                    size: 6
+                },
+                line: {
+                    color: 'rgb(255, 0, 0)',
+                    width: 3
+                }
+            }], { margin: { t: 60 }, title: 'Temperature [' + String.fromCharCode(176) + 'C]', yaxis: { range: [-10, 50], dtick: 5 } });
+            Plotly.newPlot(plotAreaHumidity, [{ x: data.humidity.x, y: data.humidity.y, mode: 'lines+markers', line: { color: 'rgb(0, 255, 0)' } }], { margin: { t: 60 }, title: 'Humidity [%]', yaxis: { range: [0, 100] } });
+            Plotly.newPlot(plotAreaPressure, [{ x: data.pressure.x, y: data.pressure.y, mode: 'lines+markers', line: { color: 'rgb(0, 0, 255)' } }], { margin: { t: 60 }, title: 'Pressure [kPa]' });
+        });
+
+        socket.on(lastDataFromServerEventName, function (data) {
+            console.log(data);
+            dataArea.innerHTML = "<h2>" + data + "</h2>";
+        });
+    </script>
+</body>
+
+</html>
