@@ -29,8 +29,6 @@ function handler(req, res) {
             //Update file in server and plot in html:
             appendToFile(body);
             sensorUpdateTimePeriod_ms = nextSensorUpdateTimePeriod_ms;
-            mySocket.emit('showUpdatePeriods', { current: getKeyByValue(periodMap, sensorUpdateTimePeriod_ms), 
-                next: getKeyByValue(periodMap, nextSensorUpdateTimePeriod_ms) });
             res.end(sensorUpdateTimePeriod_ms.toString());
             //res.end('ok');
         });
@@ -44,6 +42,12 @@ function handler(req, res) {
                 res.writeHead(200);
                 res.end(data);
             });
+    }
+    if (mySocket !== undefined) {
+        mySocket.emit('showUpdatePeriods', {
+            current: getKeyByValue(periodMap, sensorUpdateTimePeriod_ms),
+            next: getKeyByValue(periodMap, nextSensorUpdateTimePeriod_ms)
+        });
     }
 }
 
@@ -192,7 +196,7 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
 //app.listen(3060, '0.0.0.0', function () {
 app.listen(3060, function () {
     console.log('Sensorbox server listening on *:3060');
-}).on('error', function(err) {
+}).on('error', function (err) {
     if (err.errno === 'EADDRINUSE') {
         console.log('ERROR: Port ' + err.port + ' is already in use! Have you forgotten to close previous server session?');
     } else {
