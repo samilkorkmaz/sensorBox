@@ -8,8 +8,16 @@ const dataFileName = 'dataFile.json';
 const plotDataFromServerEventName = 'plotDataFromServer';
 const lastDataFromServerEventName = 'lastDataFromServer';
 
+const periodMap = {
+    '10s': 10 * 1000,
+    '10min': 10 * 60 * 1000,
+    '1hr': 1 * 60 * 60 * 1000,
+    '3hr': 3 * 60 * 60 * 1000
+}
+
 var lastSensorDataArrivalTime;
-var sensorUpdateTimePeriod_ms = 45 * 60 * 1000;
+var nextSensorUpdateTimePeriod_ms = 60 * 60 * 1000; //default update period is 1hr
+var sensorUpdateTimePeriod_ms = nextSensorUpdateTimePeriod_ms;
 
 function handler(req, res) {
     if (req.method === 'POST') {
@@ -20,6 +28,9 @@ function handler(req, res) {
         req.on('end', () => {
             //Update file in server and plot in html:
             appendToFile(body);
+            sensorUpdateTimePeriod_ms = nextSensorUpdateTimePeriod_ms;
+            mySocket.emit('showUpdatePeriods', { current: getKeyByValue(periodMap, sensorUpdateTimePeriod_ms), 
+                next: getKeyByValue(periodMap, nextSensorUpdateTimePeriod_ms) });
             res.end(sensorUpdateTimePeriod_ms.toString());
             //res.end('ok');
         });
@@ -61,21 +72,19 @@ io.on('connection', function (socket) {
 
     mySocket.on('changeUpdatePeriod', function (updatePeriod) {
         console.log('updatePeriod.value: ' + updatePeriod.value);
-        if (updatePeriod.value === "10s") {
-            sensorUpdateTimePeriod_ms = 10 * 1000;
-            console.log('10s');
-        } else if (updatePeriod.value === "10min") {
-            sensorUpdateTimePeriod_ms = 10 * 60 * 1000;
-            console.log('10min');
-        } else if (updatePeriod.value === "1hr") {
-            sensorUpdateTimePeriod_ms = 60 * 60 * 1000;
-            console.log('1hr');
-        } else if (updatePeriod.value === "3hr") {
-            sensorUpdateTimePeriod_ms = 3 * 60 * 60 * 1000;
-            console.log('3hr');
+        if (periodMap[updatePeriod.value] !== undefined) {
+            nextSensorUpdateTimePeriod_ms = periodMap[updatePeriod.value];
+            mySocket.emit('showUpdatePeriods', { current: getKeyByValue(periodMap, sensorUpdateTimePeriod_ms), next: updatePeriod.value });
         }
+        console.log('update period [ms]: ' + periodMap[updatePeriod.value]);
     });
 });
+
+//https://stackoverflow.com/a/28191966/51358
+function getKeyByValue(object, value) {
+    return Object.keys(object).find(key => object[key] === value);
+}
+
 
 function pad(num) {
     const size = 2;
@@ -83,8 +92,6 @@ function pad(num) {
     while (s.length < size) s = "0" + s;
     return s;
 }
-
-console.log(getCurrentDateTime());
 
 function getCurrentDateTime() {
     var date = new Date();
@@ -126,7 +133,6 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
                     console.log(err);
                 } else {
                     var dataInServer = JSON.parse(dataInFile);
-
                     //var newX = dataInServer.temperature.x.slice(-1)[0] + 1; //increment x
                     var newX = lastSensorDataArrivalTime;
                     dataInServer.temperature.x.push(newX);
@@ -182,9 +188,14 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
     }
 }
 
-
 //app.listen(3060, '127.0.0.1', function () {
 //app.listen(3060, '0.0.0.0', function () {
 app.listen(3060, function () {
     console.log('Sensorbox server listening on *:3060');
+}).on('error', function(err) {
+    if (err.errno === 'EADDRINUSE') {
+        console.log('ERROR: Port ' + err.port + ' is already in use! Have you forgotten to close previous server session?');
+    } else {
+        console.log(err);
+    }
 });

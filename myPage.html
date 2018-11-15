@@ -16,6 +16,7 @@
         <option>1hr</option>
         <option>3hr</option>
     </select>
+    <div id="updatePeriods"></div>
     <button onclick="changePeriod()">Change</button>
     <div id="plotAreaTemperature" style="width:600px;height:300px;"></div>
     <div id="plotAreaHumidity" style="width:600px;height:300px;"></div>
@@ -23,12 +24,12 @@
     <script>
         var socket = io();
         //var socket = io.connect('https://samilkorkmaz.com', {secure: true}); //remote url
-        
+
         function changePeriod() {
             const i = document.getElementById("updatePeriod").selectedIndex;
             const updatePeriod = document.getElementById("updatePeriod").options[i].text;
             alert("Update period " + updatePeriod + " will be in effect after next data update.");
-            socket.emit('changeUpdatePeriod', {value: updatePeriod});
+            socket.emit('changeUpdatePeriod', { value: updatePeriod });
         }
 
         const plotDataFromServerEventName = 'plotDataFromServer';
@@ -38,7 +39,7 @@
         var plotAreaHumidity = document.getElementById('plotAreaHumidity');
         var plotAreaPressure = document.getElementById('plotAreaPressure');
         var dataArea = document.getElementById('dataArea');
-        
+
         socket.on(plotDataFromServerEventName, function (data) {
             Plotly.newPlot(plotAreaTemperature, [{
                 x: data.temperature.x, y: data.temperature.y,
@@ -59,6 +60,10 @@
         socket.on(lastDataFromServerEventName, function (data) {
             console.log(data);
             dataArea.innerHTML = "<h2>" + data + "</h2>";
+        });
+
+        socket.on('showUpdatePeriods', function (data) {
+            document.getElementById('updatePeriods').innerHTML = "Update periods - current: " + data.current + ", next: " + data.next;
         });
     </script>
 </body>
