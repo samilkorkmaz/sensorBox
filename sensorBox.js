@@ -2,11 +2,9 @@ var app = require('http').createServer(handler);
 var io = require('socket.io')(app);
 var fs = require('fs');
 var mySocket;
-var sensorList = { sensors: ["Şamil", "Murat"] };
+var sensorList = { sensors: ["Samil", "Murat"] };
 var selectedSensor = sensorList.sensors[0];
 console.log('selectedSensor: ' + selectedSensor);
-
-const dataFileName = 'dataFile.json';
 
 const plotDataFromServerEventName = 'plotDataFromServer';
 const lastDataFromServerEventName = 'lastDataFromServer';
@@ -58,30 +56,58 @@ function handler(req, res) {
     }
 }
 
-io.on('connection', function (socket) {
-    mySocket = socket;
-    console.log('A new WebSocket connection has been established');
+function getSensorDataFileName() {
+    const dataFileName = 'dataFor' + selectedSensor + '.json'; //Note: File name cannot contain Turkish characters.
+    console.log(dataFileName);
+    return dataFileName;
+}
+
+function plotSensorData() {
+    var dataInServer = {
+        temperature: {
+            x: [NaN],
+            y: [NaN],
+            name: 'T [C]'
+        },
+        humidity: {
+            x: [NaN],
+            y: [NaN],
+            name: 'H [%]'
+        },
+        pressure: {
+            x: [NaN],
+            y: [NaN],
+            name: 'P [kPa]'
+        }
+    }
+    const dataFileName = getSensorDataFileName();
     if (fs.existsSync(dataFileName)) {
-        fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) {
+        fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) { //async file reading
             if (err) {
                 console.log(err);
             } else {
-                plotData(dataInFile);
+                dataInServer = JSON.parse(dataInFile);
+                //Update string in html:
+                var lastData = lastSensorDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " + dataInServer.temperature.y[dataInServer.temperature.y.length - 1] +
+                    ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1] + ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1];
+                mySocket.emit(lastDataFromServerEventName, lastData);
+                //Update plot in html:
+                mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: selectedSensor });
                 mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: selectedSensor });
             }
         });
-    }
-
-    function plotData(dataInFile) {
-        var dataInServer = JSON.parse(dataInFile);
-        //Update string in html:
-        var lastData = lastSensorDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " + dataInServer.temperature.y[dataInServer.temperature.y.length - 1] +
-            ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1] + ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1];
-        mySocket.emit(lastDataFromServerEventName, lastData);
+    } else {
         //Update plot in html:
         mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: selectedSensor });
-
+        mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: selectedSensor });
     }
+
+}
+
+io.on('connection', function (socket) {
+    mySocket = socket;
+    console.log('A new WebSocket connection has been established');
+    plotSensorData();
 
     mySocket.on('disconnect', function () {
         console.log('WS client disconnect!');
@@ -99,7 +125,7 @@ io.on('connection', function (socket) {
     mySocket.on(sensorChangedEventName, function (sensorId) {
         selectedSensor = sensorId;
         console.log('sensor changed by client. Id: ' + sensorId);
-        //plotData(dataInFile);
+        plotSensorData();
     });
 });
 
@@ -150,6 +176,7 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
         lastSensorDataArrivalTime = getCurrentDateTime(); //parsing successful, update data arrival time
         mySocket.emit(lastDataFromServerEventName, lastSensorDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " + temperatureFromClient + ", " + humidityFromClient +
             ", " + pressureFromClient);
+        const dataFileName = getSensorDataFileName();
         if (fs.existsSync(dataFileName)) {
             fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) {
                 if (err) {
@@ -172,7 +199,7 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
                         if (err) {
                             console.log(err);
                         } else {
-                            mySocket.emit(plotDataFromServerEventName, dataInServer);
+                            mySocket.emit(plotDataFromServerEventName,  { dataInServer, selectedSensor: selectedSensor });
                         }
                     });
                 }
@@ -200,7 +227,7 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
                 if (err) {
                     console.log(err);
                 } else {
-                    mySocket.emit(plotDataFromServerEventName, dataInServer);
+                    mySocket.emit(plotDataFromServerEventName,  { dataInServer, selectedSensor: selectedSensor });
                 }
             });
         }
