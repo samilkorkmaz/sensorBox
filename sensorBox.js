@@ -2,11 +2,18 @@ var app = require('http').createServer(handler);
 var io = require('socket.io')(app);
 var fs = require('fs');
 var mySocket;
+var sensorList = { sensors: ["Şamil", "Murat"] };
+var selectedSensor = sensorList.sensors[0];
+console.log('selectedSensor: ' + selectedSensor);
 
 const dataFileName = 'dataFile.json';
 
 const plotDataFromServerEventName = 'plotDataFromServer';
 const lastDataFromServerEventName = 'lastDataFromServer';
+const changeUpdatePeriodEventName = 'changeUpdatePeriod';
+const updateSensorRadioButtonsEventName = 'updateSensorRadioButtons';
+const sensorChangedEventName = 'sensorChanged';
+const showUpdatePeriodsEventName = 'showUpdatePeriods';
 
 const periodMap = {
     '10s': 10 * 1000,
@@ -59,28 +66,40 @@ io.on('connection', function (socket) {
             if (err) {
                 console.log(err);
             } else {
-                var dataInServer = JSON.parse(dataInFile);
-                //Update string in html:
-                var lastData = lastSensorDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " + dataInServer.temperature.y[dataInServer.temperature.y.length - 1] +
-                    ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1] + ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1];
-                mySocket.emit(lastDataFromServerEventName, lastData);
-                //Update plot in html:
-                mySocket.emit(plotDataFromServerEventName, dataInServer);
+                plotData(dataInFile);
+                mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: selectedSensor });
             }
         });
+    }
+
+    function plotData(dataInFile) {
+        var dataInServer = JSON.parse(dataInFile);
+        //Update string in html:
+        var lastData = lastSensorDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " + dataInServer.temperature.y[dataInServer.temperature.y.length - 1] +
+            ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1] + ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1];
+        mySocket.emit(lastDataFromServerEventName, lastData);
+        //Update plot in html:
+        mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: selectedSensor });
+
     }
 
     mySocket.on('disconnect', function () {
         console.log('WS client disconnect!');
     });
 
-    mySocket.on('changeUpdatePeriod', function (updatePeriod) {
+    mySocket.on(changeUpdatePeriodEventName, function (updatePeriod) {
         console.log('updatePeriod.value: ' + updatePeriod.value);
         if (periodMap[updatePeriod.value] !== undefined) {
             nextSensorUpdateTimePeriod_ms = periodMap[updatePeriod.value];
-            mySocket.emit('showUpdatePeriods', { current: getKeyByValue(periodMap, sensorUpdateTimePeriod_ms), next: updatePeriod.value });
+            mySocket.emit(showUpdatePeriodsEventName, { current: getKeyByValue(periodMap, sensorUpdateTimePeriod_ms), next: updatePeriod.value });
         }
         console.log('update period [ms]: ' + periodMap[updatePeriod.value]);
+    });
+
+    mySocket.on(sensorChangedEventName, function (sensorId) {
+        selectedSensor = sensorId;
+        console.log('sensor changed by client. Id: ' + sensorId);
+        //plotData(dataInFile);
     });
 });
 
