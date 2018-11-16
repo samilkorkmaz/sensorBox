@@ -61,3 +61,5 @@ typings/
 .next
 package-lock.json
 dataFile.json
+dataForMurat.json
+dataForSamil.json
