@@ -4,8 +4,8 @@ var fs = require('fs');
 var mySocket;
 var sensorList = {
     sensors: ["Samil", "Murat"],
-    updateTimePeriods_ms: [3600 * 1000, 600 * 1000],
-    nextUpdateTimePeriods_ms: [600 * 1000, 3600 * 1000],
+    updateTimePeriods_ms: [3600 * 1000, 3600 * 1000],
+    nextUpdateTimePeriods_ms: [3600 * 1000, 3600 * 1000],
     lastDataArrivalTime: [undefined, undefined]
 };
 var selectedSensor = sensorList.sensors[1];
