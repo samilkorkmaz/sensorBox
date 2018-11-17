@@ -29,6 +29,10 @@ function getSelectedSensorIndex() {
     return sensorList.sensors.findIndex(x => x === selectedSensor);
 }
 
+function getSensorIndex(sensorID) {
+    return sensorList.sensors.findIndex(x => x === sensorID);
+}
+
 function handler(req, res) {
     if (req.method === 'POST') {
         var body = '';
@@ -61,8 +65,8 @@ function handler(req, res) {
     }
 }
 
-function getSensorDataFileName() {
-    const dataFileName = 'dataFor' + selectedSensor + '.json'; //Note: File name cannot contain Turkish characters.
+function getSensorDataFileName(sensorID) {
+    const dataFileName = 'dataFor' + sensorID + '.json'; //Note: File name cannot contain Turkish characters.
     console.log(dataFileName);
     return dataFileName;
 }
@@ -90,7 +94,7 @@ function plotSensorData() {
             name: 'P [kPa]'
         }
     }
-    const dataFileName = getSensorDataFileName();
+    const dataFileName = getSensorDataFileName(selectedSensor);
     if (fs.existsSync(dataFileName)) {
         fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) { //async file reading
             if (err) {
@@ -180,17 +184,24 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
     console.log(dataFromClient);
     var s = dataFromClient.split(',');
     try {
-        var temperatureFromClient = parseFloat(s[0].trim());
-        var humidityFromClient = parseFloat(s[1].trim());
-        var pressureFromClient = NaN;
-        if (s.length == 3) {//pressure exists in dataFromClient
-            pressureFromClient = parseFloat(s[2].trim()) / 1000;
+        var temperatureFromClient_C = parseFloat(s[0].trim());
+        var humidityFromClient_percent = parseFloat(s[1].trim());
+        var pressureFromClient_kPa = parseFloat(s[2].trim()) / 1000;
+        var sensorIDFromClient;
+        var sensorID = sensorList.sensors[1]; //default sensor
+        if (s.length == 4) {//sensor id exists in dataFromClient
+            sensorIDFromClient = s[3].trim();
+            if (sensorList.sensors.findIndex(x => x === sensorIDFromClient) >= 0) {//sensor id exists in sensor list
+                sensorID = sensorIDFromClient;
+            }
         }
-        sensorList.lastDataArrivalTime[getSelectedSensorIndex()] = getCurrentDateTime(); //parsing successful, update data arrival time
-        mySocket.emit(lastDataFromServerEventName, sensorList.lastDataArrivalTime[getSelectedSensorIndex()] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " +
-            temperatureFromClient + ", " + humidityFromClient +
-            ", " + pressureFromClient);
-        const dataFileName = getSensorDataFileName();
+        console.log('sensorID ' + sensorID + ' used to write to file');
+        sensorList.lastDataArrivalTime[getSensorIndex(sensorID)] = getCurrentDateTime(); //parsing successful, update data arrival time
+        if (selectedSensor === sensorID) {
+            mySocket.emit(lastDataFromServerEventName, sensorList.lastDataArrivalTime[getSelectedSensorIndex()] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " +
+                temperatureFromClient_C + ", " + humidityFromClient_percent + ", " + pressureFromClient_kPa);
+        }
+        const dataFileName = getSensorDataFileName(sensorID);
         if (fs.existsSync(dataFileName)) {
             fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) {
                 if (err) {
@@ -200,20 +211,22 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
                     //var newX = dataInServer.temperature.x.slice(-1)[0] + 1; //increment x
                     var newX = sensorList.lastDataArrivalTime[getSelectedSensorIndex()];
                     dataInServer.temperature.x.push(newX);
-                    dataInServer.temperature.y.push(temperatureFromClient);
+                    dataInServer.temperature.y.push(temperatureFromClient_C);
 
                     dataInServer.humidity.x.push(newX);
-                    dataInServer.humidity.y.push(humidityFromClient);
+                    dataInServer.humidity.y.push(humidityFromClient_percent);
 
                     dataInServer.pressure.x.push(newX);
-                    dataInServer.pressure.y.push(pressureFromClient);
+                    dataInServer.pressure.y.push(pressureFromClient_kPa);
 
                     json = JSON.stringify(dataInServer); //convert it back to json
                     fs.writeFile(dataFileName, json, 'utf8', function (err, data) {
                         if (err) {
                             console.log(err);
                         } else {
-                            mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: selectedSensor });
+                            if (selectedSensor === sensorID) {
+                                mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: selectedSensor });
+                            }
                         }
                     });
                 }
@@ -222,17 +235,17 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
             var dataInServer = {
                 temperature: {
                     x: [sensorList.lastDataArrivalTime[getSelectedSensorIndex()]],
-                    y: [temperatureFromClient],
+                    y: [temperatureFromClient_C],
                     name: 'T [C]'
                 },
                 humidity: {
                     x: [sensorList.lastDataArrivalTime[getSelectedSensorIndex()]],
-                    y: [humidityFromClient],
+                    y: [humidityFromClient_percent],
                     name: 'H [%]'
                 },
                 pressure: {
                     x: [sensorList.lastDataArrivalTime[getSelectedSensorIndex()]],
-                    y: [pressureFromClient],
+                    y: [pressureFromClient_kPa],
                     name: 'P [kPa]'
                 }
             }
