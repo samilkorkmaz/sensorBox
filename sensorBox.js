@@ -1,6 +1,7 @@
 var app = require('http').createServer(handler);
 var io = require('socket.io')(app);
 var fs = require('fs');
+const util = require('./utilities.js');
 var mySocket;
 var sensorList = {
     sensors: ["Samil", "Murat"],
@@ -10,6 +11,7 @@ var sensorList = {
 };
 var selectedSensor = sensorList.sensors[1];
 console.log('selectedSensor: ' + selectedSensor);
+console.log(util.getCurrentDateTime());
 
 const plotDataFromServerEventName = 'plotDataFromServer';
 const lastDataFromServerEventName = 'lastDataFromServer';
@@ -59,22 +61,16 @@ function handler(req, res) {
     }
     if (mySocket !== undefined) {
         mySocket.emit('showUpdatePeriods', {
-            current: getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSelectedSensorIndex()]),
-            next: getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSelectedSensorIndex()])
+            current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSelectedSensorIndex()]),
+            next: util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSelectedSensorIndex()])
         });
     }
 }
 
-function getSensorDataFileName(sensorID) {
-    const dataFileName = 'dataFor' + sensorID + '.json'; //Note: File name cannot contain Turkish characters.
-    console.log(dataFileName);
-    return dataFileName;
-}
-
 function plotSensorData() {
     mySocket.emit('showUpdatePeriods', {
-        current: getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSelectedSensorIndex()]),
-        next: getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSelectedSensorIndex()])
+        current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSelectedSensorIndex()]),
+        next: util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSelectedSensorIndex()])
     });
 
     var dataInServer = {
@@ -94,7 +90,7 @@ function plotSensorData() {
             name: 'P [kPa]'
         }
     }
-    const dataFileName = getSensorDataFileName(selectedSensor);
+    const dataFileName = util.getSensorDataFileName(selectedSensor);
     if (fs.existsSync(dataFileName)) {
         fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) { //async file reading
             if (err) {
@@ -132,7 +128,7 @@ io.on('connection', function (socket) {
         if (periodMap[updatePeriod.value] !== undefined) {
             sensorList.nextUpdateTimePeriods_ms[getSelectedSensorIndex()] = periodMap[updatePeriod.value];
             mySocket.emit(showUpdatePeriodsEventName, {
-                current: getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSelectedSensorIndex()]),
+                current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSelectedSensorIndex()]),
                 next: updatePeriod.value
             });
         }
@@ -145,39 +141,6 @@ io.on('connection', function (socket) {
         plotSensorData();
     });
 });
-
-//https://stackoverflow.com/a/28191966/51358
-function getKeyByValue(object, value) {
-    return Object.keys(object).find(key => object[key] === value);
-}
-
-
-function pad(num) {
-    const size = 2;
-    var s = num + "";
-    while (s.length < size) s = "0" + s;
-    return s;
-}
-
-function getCurrentDateTime() {
-    var date = new Date();
-
-    var sec = date.getSeconds();
-    var min = date.getMinutes();
-    var modifiedHour = date.getHours() + 3;
-    var hour = (modifiedHour) % 24; //My server time is 3 hours behind Turkey time
-
-    var day = modifiedHour < 24 ? date.getDate() : date.getDate() + 1; //day of month. if you use getDay(), it will return day of week
-    var modifiedMonth = day <= daysInMonth(date.getFullYear(), date.getMonth() + 1) ? date.getMonth() + 1 : date.getMonth() + 2; //January = 0
-    var month = modifiedMonth < 13 ? modifiedMonth : 1;
-    var year = modifiedMonth < 13 ? date.getFullYear() : date.getFullYear() + 1;
-
-    return year + '-' + pad(month) + '-' + pad(day) + ' ' + pad(hour) + ':' + pad(min) + ':' + pad(sec); //plotly format
-}
-
-function daysInMonth(month, year) { // Use 1 for January, 2 for February, etc. https://stackoverflow.com/a/315767/51358
-    return new Date(year, month, 0).getDate();
-}
 
 function appendToFile(dataFromClient) {// data from client is of the form "25.12, 33.78"
     //TODO What to do when file gets too large (>10 MB) --> Use database instead of text file  
@@ -196,12 +159,12 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
             }
         }
         console.log('sensorID ' + sensorID + ' used to write to file');
-        sensorList.lastDataArrivalTime[getSensorIndex(sensorID)] = getCurrentDateTime(); //parsing successful, update data arrival time
+        sensorList.lastDataArrivalTime[getSensorIndex(sensorID)] = util.getCurrentDateTime(); //parsing successful, update data arrival time
         if (selectedSensor === sensorID) {
             mySocket.emit(lastDataFromServerEventName, sensorList.lastDataArrivalTime[getSelectedSensorIndex()] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " +
                 temperatureFromClient_C + ", " + humidityFromClient_percent + ", " + pressureFromClient_kPa);
         }
-        const dataFileName = getSensorDataFileName(sensorID);
+        const dataFileName = util.getSensorDataFileName(sensorID);
         if (fs.existsSync(dataFileName)) {
             fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) {
                 if (err) {
@@ -260,7 +223,7 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
         }
     } catch (err) {
         console.log('Error while trying to parse "' + dataFromClient + '" and append to file. Message: ' + err);
-        mySocket.emit(lastDataFromServerEventName, getCurrentDateTime() + '<br>Wrong data format!<br>Sent data: "<span style="color: #ff0000">' + dataFromClient +
+        mySocket.emit(lastDataFromServerEventName, util.getCurrentDateTime() + '<br>Wrong data format!<br>Sent data: "<span style="color: #ff0000">' + dataFromClient +
             '</span>"<br>Data should be of the format "<span style="color: #0000ff">number1, number2</span>"');
     }
 }
