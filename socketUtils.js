@@ -164,7 +164,7 @@ function appendToFile(mySocket, dataFromClient) {// data from client is of the f
                     });
                 }
             });
-        } else {
+        } else {// data file does not exist for sensor that sent data to server
             var dataInServer = {
                 temperature: {
                     x: [sensorList.lastDataArrivalTime[getSelectedSensorIndex()]],
