@@ -19,8 +19,8 @@ function handler(req, res) {
         });
         req.on('end', () => {
             socketUtils.updateFileAndPlot(mySocket, body);
-            res.end(socketUtils.sensorList.updateTimePeriods_ms[socketUtils.getSelectedSensorIndex()].toString());
-            //res.end('ok from Samil's VPS);
+            res.end(socketUtils.getUpdateTimePeriodsForActiveSensor_ms().toString()); //send updateTimePeriod to sensor
+            //res.end('ok from Samil VPS);
         });
     } else {
         fs.readFile(__dirname + '/myPage.html',
@@ -34,7 +34,7 @@ function handler(req, res) {
             });
     }
     if (mySocket !== undefined) {
-        socketUtils.showUpdatePeriods(mySocket);
+        socketUtils.showUpdatePeriodsForUserSelectedSensor(mySocket);
     }
 }
 
@@ -48,7 +48,7 @@ io.on('connection', function (socket) {
     });
 
     mySocket.on(changeUpdatePeriodEventName, function (updatePeriod) {
-        socketUtils.changeUpdatePeriod(mySocket, updatePeriod);
+        socketUtils.changeUpdatePeriodForUserSelectedSensor(mySocket, updatePeriod);
     });
 
     mySocket.on(sensorChangedEventName, function (sensorID) {
