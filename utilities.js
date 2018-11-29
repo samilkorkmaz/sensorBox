@@ -26,14 +26,13 @@ module.exports = {
         var modifiedMonth = day <= daysInMonth(date.getFullYear(), date.getMonth() + 1) ? date.getMonth() + 1 : date.getMonth() + 2; //January = 0
         var month = modifiedMonth < 13 ? modifiedMonth : 1;
         var year = modifiedMonth < 13 ? date.getFullYear() : date.getFullYear() + 1;
-
         return year + '-' + pad(month) + '-' + pad(day) + ' ' + pad(hour) + ':' + pad(min) + ':' + pad(sec); //plotly format
     }
 
     
 }
 
-function daysInMonth(month, year) { // Use 1 for January, 2 for February, etc. https://stackoverflow.com/a/315767/51358
+function daysInMonth(year, month) { // Use 1 for January, 2 for February, etc. https://stackoverflow.com/a/315767/51358
     return new Date(year, month, 0).getDate();
 }
 
