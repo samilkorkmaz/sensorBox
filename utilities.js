@@ -23,7 +23,7 @@ module.exports = {
         var hour = (modifiedHour) % 24; //My server time is 3 hours behind Turkey time
 
         var day = modifiedHour < 24 ? date.getDate() : date.getDate() + 1; //day of month. if you use getDay(), it will return day of week
-        var modifiedMonth = day <= daysInMonth(date.getFullYear(), date.getMonth() + 1) ? date.getMonth() + 1 : date.getMonth() + 2; //January = 0
+        var modifiedMonth = day <= daysInMonth(date.getMonth() + 1, date.getFullYear()) ? date.getMonth() + 1 : date.getMonth() + 2; //January = 0
         var month = modifiedMonth < 13 ? modifiedMonth : 1;
         var year = modifiedMonth < 13 ? date.getFullYear() : date.getFullYear() + 1;
         return year + '-' + pad(month) + '-' + pad(day) + ' ' + pad(hour) + ':' + pad(min) + ':' + pad(sec); //plotly format
@@ -32,7 +32,7 @@ module.exports = {
     
 }
 
-function daysInMonth(year, month) { // Use 1 for January, 2 for February, etc. https://stackoverflow.com/a/315767/51358
+function daysInMonth(month, year) { // Use 1 for January, 2 for February, etc. https://stackoverflow.com/a/315767/51358
     return new Date(year, month, 0).getDate();
 }
 

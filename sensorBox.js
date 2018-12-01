@@ -6,7 +6,7 @@ const socketUtils = require('./socketUtils.js');
 var mySocket;
 
 console.log('selectedSensor: ' + socketUtils.selectedSensor);
-console.log(util.getCurrentDateTime());
+console.log(util.getCurrentDateTime());  
 
 const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
