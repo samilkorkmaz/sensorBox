@@ -15,17 +15,23 @@ module.exports = {
     },
 
     getCurrentDateTime: function () {
+        //var date = new Date('November 30, 2018 23:00:00'); //for testing
         var date = new Date();
 
         var sec = date.getSeconds();
         var min = date.getMinutes();
-        var modifiedHour = date.getHours() + 3;
-        var hour = (modifiedHour) % 24; //My server time is 3 hours behind Turkey time
-
-        var day = modifiedHour < 24 ? date.getDate() : date.getDate() + 1; //day of month. if you use getDay(), it will return day of week
-        var modifiedMonth = day <= daysInMonth(date.getMonth() + 1, date.getFullYear()) ? date.getMonth() + 1 : date.getMonth() + 2; //January = 0
-        var month = modifiedMonth < 13 ? modifiedMonth : 1;
-        var year = modifiedMonth < 13 ? date.getFullYear() : date.getFullYear() + 1;
+        var hourTurkeyTime = date.getHours() + 3;
+        var hour = (hourTurkeyTime) % 24; //My server time is 3 hours behind Turkey time
+        
+        var rawDay = hourTurkeyTime < 24 ? date.getDate() : date.getDate() + 1; //day of month. if you use getDay(), it will return day of week
+        var day = rawDay <= daysInMonth(date.getMonth() + 1, date.getFullYear()) ? rawDay : 1;
+        /*console.log("rawDay: " + rawDay);
+        console.log("days in month: " + daysInMonth(date.getMonth() + 1, date.getFullYear()));
+        console.log("day: " + day);*/
+        var rawMonth = rawDay <= daysInMonth(date.getMonth() + 1, date.getFullYear()) ? date.getMonth() + 1 : date.getMonth() + 2; //January = 0
+        
+        var month = rawMonth < 13 ? rawMonth : 1;
+        var year = rawMonth < 13 ? date.getFullYear() : date.getFullYear() + 1;
         return year + '-' + pad(month) + '-' + pad(day) + ' ' + pad(hour) + ':' + pad(min) + ':' + pad(sec); //plotly format
     }
 
