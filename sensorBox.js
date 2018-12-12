@@ -6,7 +6,9 @@ const socketUtils = require('./socketUtils.js');
 var mySocket;
 
 console.log('selectedSensor: ' + socketUtils.selectedSensor);
-console.log(util.getCurrentDateTime());  
+console.log(util.getCurrentDateTime());
+
+const maxAllowedDataNbOfChars = 50;
 
 const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
@@ -18,9 +20,14 @@ function handler(req, res) {
             body += chunk.toString(); // convert Buffer to string
         });
         req.on('end', () => {
-            socketUtils.updateFileAndPlot(mySocket, body);
-            res.end(socketUtils.getUpdateTimePeriodsForActiveSensor_ms().toString()); //send updateTimePeriod to sensor
-            //res.end('ok from Samil VPS);
+            console.log("body.length = " + body.length + ", maxAllowedDataNbOfChars: " + maxAllowedDataNbOfChars);
+            if (body.length > maxAllowedDataNbOfChars) {//To curb random internet post calls to my VPS
+                res.end("403"); //403 = Forbidden
+            } else {
+                socketUtils.updateFileAndPlot(mySocket, body);
+                res.end(socketUtils.getUpdateTimePeriodsForActiveSensor_ms().toString()); //send updateTimePeriod to sensor
+                //res.end('ok from Samil VPS);
+            }
         });
     } else {
         fs.readFile(__dirname + '/myPage.html',
