@@ -5,10 +5,10 @@ const util = require('./utilities.js');
 const socketUtils = require('./socketUtils.js');
 var mySocket;
 
+const maxNbOfAllowedCharsInPostRequestBody = 50;
+
 console.log('selectedSensor: ' + socketUtils.selectedSensor);
 console.log(util.getCurrentDateTime());
-
-const maxAllowedDataNbOfChars = 50;
 
 const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
@@ -20,13 +20,16 @@ function handler(req, res) {
             body += chunk.toString(); // convert Buffer to string
         });
         req.on('end', () => {
-            console.log("body.length = " + body.length + ", maxAllowedDataNbOfChars: " + maxAllowedDataNbOfChars);
-            if (body.length > maxAllowedDataNbOfChars) {//To curb random internet post calls to my VPS
-                res.end("403"); //403 = Forbidden
-            } else {
+            if (body.length <= maxNbOfAllowedCharsInPostRequestBody) {
                 socketUtils.updateFileAndPlot(mySocket, body);
                 res.end(socketUtils.getUpdateTimePeriodsForActiveSensor_ms().toString()); //send updateTimePeriod to sensor
-                //res.end('ok from Samil VPS);
+            } else {
+                var ipRemote = req.headers['x-forwarded-for'] ||
+                    req.connection.remoteAddress ||
+                    req.socket.remoteAddress ||
+                    (req.connection.socket ? req.connection.socket.remoteAddress : null);
+                console.error("Invalid post request! ipRemote: " + ipRemote + ", body.length (" + body.length + ") > maxNbOfAllowedChars (" + maxNbOfAllowedCharsInPostRequestBody + ")");
+                //Do not return a response to requester because this post request might be from a network/port scanner.
             }
         });
     } else {
