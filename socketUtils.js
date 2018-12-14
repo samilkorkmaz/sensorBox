@@ -1,6 +1,6 @@
 var fs = require('fs');
 const util = require('./utilities.js');
-
+const nbOfDigits = 1;
 const periodMap = {
     '10s': 10 * 1000,
     '10min': 10 * 60 * 1000,
@@ -13,10 +13,10 @@ const lastDataFromServerEventName = 'lastDataFromServer';
 const showUpdatePeriodsEventName = 'showUpdatePeriods';
 
 var sensorList = {
-    sensors: ["Samil", "Murat"],
-    updateTimePeriods_ms: [3600 * 1000, 3600 * 1000],
-    nextUpdateTimePeriods_ms: [3600 * 1000, 3600 * 1000],
-    lastDataArrivalTime: [undefined, undefined]
+    sensors: ["Samil", "Murat", "Samil_BME280"],
+    updateTimePeriods_ms: [3600 * 1000, 3600 * 1000, 3600 * 1000],
+    nextUpdateTimePeriods_ms: [3600 * 1000, 3600 * 1000, 3600 * 1000],
+    lastDataArrivalTime: [undefined, undefined, undefined]
 };
 
 var userSelectedSensor = sensorList.sensors[1]; //sensor selected by user on HTML page
@@ -105,8 +105,10 @@ function plotSensorData(mySocket, sensorID) {
             } else {
                 dataInServer = JSON.parse(dataInFile);
                 //Update string in html:
-                var lastData = sensorList.lastDataArrivalTime[getSensorIndex(sensorID)] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " + dataInServer.temperature.y[dataInServer.temperature.y.length - 1] +
-                    ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1] + ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1];
+                var lastData = sensorList.lastDataArrivalTime[getSensorIndex(sensorID)] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = "
+                    + dataInServer.temperature.y[dataInServer.temperature.y.length - 1].toFixed(nbOfDigits) +
+                    ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1].toFixed(nbOfDigits) +
+                    ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1].toFixed(nbOfDigits);
                 mySocket.emit(lastDataFromServerEventName, lastData);
                 //Update plot in html:
                 mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: sensorID });
@@ -140,7 +142,7 @@ function appendToFile(mySocket, dataFromClient) {// data from client is of the f
         sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)] = util.getCurrentDateTime(); //parsing successful, update data arrival time
         if (userSelectedSensor === activeSensor) {
             mySocket.emit(lastDataFromServerEventName, sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " +
-                temperatureFromClient_C + ", " + humidityFromClient_percent + ", " + pressureFromClient_kPa);
+                temperatureFromClient_C.toFixed(nbOfDigits) + ", " + humidityFromClient_percent.toFixed(nbOfDigits) + ", " + pressureFromClient_kPa.toFixed(nbOfDigits));
         }
         const dataFileName = util.getSensorDataFileName(activeSensor);
         if (fs.existsSync(dataFileName)) {
