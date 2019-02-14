@@ -7,14 +7,14 @@ var mySocket;
 
 const maxNbOfAllowedCharsInPostRequestBody = 50;
 
-console.log('selectedSensor: ' + socketUtils.selectedSensor);
+console.log('selectedSensor: ' + socketUtils.selectedSensorID);
 console.log(util.getCurrentDateTime());
 
 const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
 
 function handler(req, res) {
-    if (req.method === 'POST') {
+    if (req.method === 'POST') { //if sensor has sent data to server
         var body = '';
         req.on('data', chunk => {
             body += chunk.toString(); // convert Buffer to string
@@ -32,7 +32,7 @@ function handler(req, res) {
                 //Do not return a response to requester because this post request might be from a network/port scanner.
             }
         });
-    } else {
+    } else { //if browser connected to server
         fs.readFile(__dirname + '/myPage.html',
             function (err, data) {
                 if (err) {
@@ -51,7 +51,7 @@ function handler(req, res) {
 io.on('connection', function (socket) {
     mySocket = socket;
     console.log('A new WebSocket connection has been established');
-    socketUtils.plotSensorData(mySocket, socketUtils.selectedSensor);
+    socketUtils.plotSensorData(mySocket, socketUtils.selectedSensorID);
 
     mySocket.on('disconnect', function () {
         console.log('WS client disconnect!');
