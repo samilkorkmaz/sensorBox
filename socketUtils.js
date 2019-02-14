@@ -75,7 +75,7 @@ function updateFileAndPlot(mySocket, body) {
 function plotSensorData(mySocket, sensorID) {
     console.log('sensorID sent by client: ' + sensorID);
     userSelectedSensorID = sensorID;
-    mySocket.emit('showUpdatePeriods', {
+    mySocket.emit(showUpdatePeriodsEventName, {
         current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSensorIndex(sensorID)]),
         next: util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSensorIndex(sensorID)])
     });

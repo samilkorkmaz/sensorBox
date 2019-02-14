@@ -3,7 +3,7 @@ var io = require('socket.io')(app);
 var fs = require('fs');
 const util = require('./utilities.js');
 const socketUtils = require('./socketUtils.js');
-var mySocket;
+//var mySocket;
 
 const maxNbOfAllowedCharsInPostRequestBody = 50;
 
@@ -43,26 +43,26 @@ function handler(req, res) {
                 res.end(data);
             });
     }
-    if (mySocket !== undefined) {
+    /*if (mySocket !== undefined) {
         socketUtils.showUpdatePeriodsForUserSelectedSensor(mySocket);
-    }
+    }*/
 }
 
 io.on('connection', function (socket) {
-    mySocket = socket;
+    //mySocket = socket;
     console.log('A new WebSocket connection has been established');
-    socketUtils.plotSensorData(mySocket, socketUtils.selectedSensorID);
+    socketUtils.plotSensorData(socket, socketUtils.selectedSensorID);
 
-    mySocket.on('disconnect', function () {
+    socket.on('disconnect', function () {
         console.log('WS client disconnect!');
     });
 
-    mySocket.on(changeUpdatePeriodEventName, function (updatePeriod) {
-        socketUtils.changeUpdatePeriodForUserSelectedSensor(mySocket, updatePeriod);
+    socket.on(changeUpdatePeriodEventName, function (updatePeriod) {
+        socketUtils.changeUpdatePeriodForUserSelectedSensor(socket, updatePeriod);
     });
 
-    mySocket.on(sensorChangedEventName, function (sensorID) {
-        socketUtils.plotSensorData(mySocket, sensorID);
+    socket.on(sensorChangedEventName, function (sensorID) {
+        socketUtils.plotSensorData(socket, sensorID);
     });
 });
 
