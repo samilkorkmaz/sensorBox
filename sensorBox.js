@@ -3,7 +3,7 @@ var io = require('socket.io')(app);
 var fs = require('fs');
 const util = require('./utilities.js');
 const socketUtils = require('./socketUtils.js');
-//var mySocket;
+var activeSocket;
 
 const maxNbOfAllowedCharsInPostRequestBody = 50;
 
@@ -21,7 +21,7 @@ function handler(req, res) {
         });
         req.on('end', () => {
             if (body.length <= maxNbOfAllowedCharsInPostRequestBody) {
-                socketUtils.updateFileAndPlot(mySocket, body);
+                socketUtils.updateFileAndPlot(activeSocket, body);
                 res.end(socketUtils.getUpdateTimePeriodsForActiveSensor_ms().toString()); //send updateTimePeriod to sensor
             } else {
                 var ipRemote = req.headers['x-forwarded-for'] ||
@@ -43,13 +43,13 @@ function handler(req, res) {
                 res.end(data);
             });
     }
-    /*if (mySocket !== undefined) {
-        socketUtils.showUpdatePeriodsForUserSelectedSensor(mySocket);
-    }*/
+    if (activeSocket !== undefined) {
+        socketUtils.showUpdatePeriodsForUserSelectedSensor(activeSocket);
+    }
 }
 
 io.on('connection', function (socket) {
-    //mySocket = socket;
+    activeSocket = socket;
     console.log('A new WebSocket connection has been established');
     socketUtils.plotSensorData(socket, socketUtils.selectedSensorID);
 
