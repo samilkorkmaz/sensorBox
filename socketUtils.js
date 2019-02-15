@@ -117,9 +117,9 @@ function plotSensorData(mySocket, sensorID) {
                 mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: sensorID });
             }
         });
-    } else {
-        //Update plot in html:
-        mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: sensorID });
+    } else { //no data exists
+        mySocket.emit(lastDataFromServerEventName, "Awaiting data...");
+        mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: sensorID }); //update plot in HTML with default data
         mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: sensorID });
     }
 }
