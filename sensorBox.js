@@ -51,7 +51,7 @@ function handler(req, res) {
 io.on('connection', function (socket) {
     activeSocket = socket;
     console.log('A new WebSocket connection has been established');
-    socketUtils.plotSensorData(socket, socketUtils.selectedSensorID);
+    socketUtils.plotSensorData(socket, socketUtils.defaultSelectedSensorID);
 
     socket.on('disconnect', function () {
         console.log('WS client disconnect!');

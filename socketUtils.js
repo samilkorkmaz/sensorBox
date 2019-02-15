@@ -19,7 +19,8 @@ var sensorList = {
     lastDataArrivalTime: [undefined, undefined, undefined]
 };
 
-var userSelectedSensorID = sensorList.sensors[1]; //sensor selected by user on HTML page
+var defaultSelectedSensorID = sensorList.sensors[1];
+var userSelectedSensorID = defaultSelectedSensorID; //sensor selected by user on HTML page
 var activeSensor; //sensor that last sent data
 
 module.exports = {
@@ -29,6 +30,7 @@ module.exports = {
     showUpdatePeriodsEventName: showUpdatePeriodsEventName,
     periodMap: periodMap,
     sensorList: sensorList,
+    defaultSelectedSensorID: defaultSelectedSensorID,
     selectedSensorID: userSelectedSensorID,
     getSelectedSensorIndex: getUserSelectedSensorIndex,
     getSensorIndex: getSensorIndex,
