@@ -104,7 +104,7 @@ function plotSensorData(mySocket, sensorID) {
             } else {
                 dataInServer = JSON.parse(dataInFile);
                 //Update string in html:
-                const lastDataArrivalTime = dataInServer.temperature.x[dataInServer.temperature.y.length - 1];
+                const lastDataArrivalTime = dataInServer.temperature.x[dataInServer.temperature.x.length - 1];
                 var lastData =  lastDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = "
                     + dataInServer.temperature.y[dataInServer.temperature.y.length - 1].toFixed(nbOfDigits) +
                     ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1].toFixed(nbOfDigits) +
