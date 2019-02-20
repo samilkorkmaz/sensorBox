@@ -3,7 +3,6 @@ var io = require('socket.io')(app);
 var fs = require('fs');
 const util = require('./utilities.js');
 const socketUtils = require('./socketUtils.js');
-var activeSocket;
 
 const maxNbOfAllowedCharsInPostRequestBody = 50;
 
@@ -13,6 +12,8 @@ console.log(util.getCurrentDateTime());
 const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
 
+var connections = []; //array holding all active connections.
+
 function handler(req, res) {
     if (req.method === 'POST') { //if sensor has sent data to server
         var body = '';
@@ -21,7 +22,13 @@ function handler(req, res) {
         });
         req.on('end', () => {
             if (body.length <= maxNbOfAllowedCharsInPostRequestBody) {
-                socketUtils.updateFileAndPlot(activeSocket, body);
+                const err = socketUtils.appendToFile(body);
+                if (err === null) {
+                    for (let i = 0; i < connections.length; i++) {
+                        const connection = connections[i];
+                        socketUtils.plotSensorData(connection.socket, connection.selectedSensorID);
+                    }
+                }
                 res.end(socketUtils.getUpdateTimePeriodsForActiveSensor_ms().toString()); //send updateTimePeriod to sensor
             } else {
                 var ipRemote = req.headers['x-forwarded-for'] ||
@@ -43,25 +50,36 @@ function handler(req, res) {
                 res.end(data);
             });
     }
-    if (activeSocket !== undefined) {
-        socketUtils.showUpdatePeriodsForUserSelectedSensor(activeSocket);
-    }
 }
 
 io.on('connection', function (socket) {
-    activeSocket = socket;
+    var connection = {
+        socket : socket,
+        userSelectedSensorID : socketUtils.defaultSelectedSensorID
+    }
+    connections.push(connection);
     console.log('A new WebSocket connection has been established');
-    socketUtils.plotSensorData(socket, socketUtils.defaultSelectedSensorID);
+    console.log("IP: " + socket.request.connection.remoteAddress + ", socket.id: " + socket.id);
+    socketUtils.plotSensorData(socket, connection.userSelectedSensorID);
 
     socket.on('disconnect', function () {
         console.log('WS client disconnect!');
+        for (let i = 0; i < connections.length; i++) {
+            const connect = connections[i];
+            if (connect.socket.id === socket.id) {
+                connections.splice(i, 1); //remove connection from array
+                console.log("Removed socket from connections. id: " + socket.id + ". connections.length = " + connections.length);
+                break;
+            }
+        }
     });
 
     socket.on(changeUpdatePeriodEventName, function (updatePeriod) {
-        socketUtils.changeUpdatePeriodForUserSelectedSensor(socket, updatePeriod);
+        socketUtils.changeUpdatePeriodForUserSelectedSensor(socket, connection.userSelectedSensorID, updatePeriod);
     });
 
     socket.on(sensorChangedEventName, function (sensorID) {
+        connection.userSelectedSensorID = sensorID;
         socketUtils.plotSensorData(socket, sensorID);
     });
 });
