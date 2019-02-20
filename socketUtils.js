@@ -15,8 +15,7 @@ const showUpdatePeriodsEventName = 'showUpdatePeriods';
 var sensorList = {
     sensors: ["Samil", "Murat", "Samil_BME280"],
     updateTimePeriods_ms: [3600 * 1000, 3600 * 1000, 3600 * 1000],
-    nextUpdateTimePeriods_ms: [3600 * 1000, 3600 * 1000, 3600 * 1000],
-    lastDataArrivalTime: [undefined, undefined, undefined]
+    nextUpdateTimePeriods_ms: [3600 * 1000, 3600 * 1000, 3600 * 1000]
 };
 
 var defaultSelectedSensorID = sensorList.sensors[1];
@@ -107,7 +106,8 @@ function plotSensorData(mySocket, sensorID) {
             } else {
                 dataInServer = JSON.parse(dataInFile);
                 //Update string in html:
-                var lastData = sensorList.lastDataArrivalTime[getSensorIndex(sensorID)] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = "
+                const lastDataArrivalTime = dataInServer.temperature.x[dataInServer.temperature.y.length - 1];
+                var lastData =  lastDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = "
                     + dataInServer.temperature.y[dataInServer.temperature.y.length - 1].toFixed(nbOfDigits) +
                     ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1].toFixed(nbOfDigits) +
                     ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1].toFixed(nbOfDigits);
@@ -141,9 +141,9 @@ function appendToFile(mySocket, dataFromClient) {// data from client is of the f
             }
         }
         console.log('activeSensor ' + activeSensor + ' used to write to file. userSelectedSensor: ' + userSelectedSensorID);
-        sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)] = util.getCurrentDateTime(); //parsing successful, update data arrival time
+        const lastDataArrivalTime = util.getCurrentDateTime(); //parsing successful, update data arrival time
         if (userSelectedSensorID === activeSensor) {
-            mySocket.emit(lastDataFromServerEventName, sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)] + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " +
+            mySocket.emit(lastDataFromServerEventName, lastDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = " +
                 temperatureFromClient_C.toFixed(nbOfDigits) + ", " + humidityFromClient_percent.toFixed(nbOfDigits) + ", " + pressureFromClient_kPa.toFixed(nbOfDigits));
         }
         const dataFileName = util.getSensorDataFileName(activeSensor);
@@ -154,7 +154,7 @@ function appendToFile(mySocket, dataFromClient) {// data from client is of the f
                 } else {
                     var dataInServer = JSON.parse(dataInFile);
                     //var newX = dataInServer.temperature.x.slice(-1)[0] + 1; //increment x
-                    var newX = sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)];
+                    var newX = lastDataArrivalTime;
                     dataInServer.temperature.x.push(newX);
                     dataInServer.temperature.y.push(temperatureFromClient_C);
 
@@ -179,17 +179,17 @@ function appendToFile(mySocket, dataFromClient) {// data from client is of the f
         } else {// data file does not exist for sensor that sent data to server
             var dataInServer = {
                 temperature: {
-                    x: [sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)]],
+                    x: [lastDataArrivalTime],
                     y: [temperatureFromClient_C],
                     name: 'T [C]'
                 },
                 humidity: {
-                    x: [sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)]],
+                    x: [lastDataArrivalTime],
                     y: [humidityFromClient_percent],
                     name: 'H [%]'
                 },
                 pressure: {
-                    x: [sensorList.lastDataArrivalTime[getSensorIndex(activeSensor)]],
+                    x: [lastDataArrivalTime],
                     y: [pressureFromClient_kPa],
                     name: 'P [kPa]'
                 }
