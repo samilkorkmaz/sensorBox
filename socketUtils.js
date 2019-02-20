@@ -31,8 +31,6 @@ module.exports = {
     sensorList: sensorList,
     defaultSelectedSensorID: defaultSelectedSensorID,
     selectedSensorID: userSelectedSensorID,
-    getSelectedSensorIndex: getUserSelectedSensorIndex,
-    getSensorIndex: getSensorIndex,
     //functions:
     appendToFile: appendToFile,
     plotSensorData: plotSensorData,
