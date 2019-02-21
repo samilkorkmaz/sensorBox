@@ -1,6 +1,7 @@
 var fs = require('fs');
 const util = require('./utilities.js');
 const nbOfDigits = 1;
+const updatePeriodOneHour = '1hr';
 const periodMap = {
     '10s': 10 * 1000,
     '10min': 10 * 60 * 1000,
@@ -27,30 +28,16 @@ module.exports = {
     plotDataFromServerEventName: plotDataFromServerEventName,
     lastDataFromServerEventName: lastDataFromServerEventName,
     showUpdatePeriodsEventName: showUpdatePeriodsEventName,
+    updatePeriodOneHour: updatePeriodOneHour,
     periodMap: periodMap,
     sensorList: sensorList,
     defaultSelectedSensorID: defaultSelectedSensorID,
     selectedSensorID: userSelectedSensorID,
     //functions:
-    appendToFile: appendToFile,
+    appendSensorDataToFile: appendSensorDataToFile,
     plotSensorData: plotSensorData,
-    updateFileAndPlot: updateFileAndPlot,
     changeUpdatePeriodForUserSelectedSensor: changeUpdatePeriodForUserSelectedSensor,
-    showUpdatePeriodsForUserSelectedSensor: showUpdatePeriodsForUserSelectedSensor,
-    getUpdateTimePeriodsForActiveSensor_ms: getUpdateTimePeriodsForActiveSensor_ms
-}
-
-function getUpdateTimePeriodsForActiveSensor_ms() {
-    return sensorList.updateTimePeriods_ms[getActiveSensorIndex()];
-}
-
-function showUpdatePeriodsForUserSelectedSensor(userSelectedSensorID) {
-    if (userSelectedSensorID === userSelectedSensorID) {
-        mySocket.emit(showUpdatePeriodsEventName, {
-            current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSensorIndex(userSelectedSensorID)]),
-            next: util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSensorIndex(userSelectedSensorID)])
-        });
-    }
+    getNextUpdateTimePeriodsForSensor_ms: getNextUpdateTimePeriodsForSensor_ms
 }
 
 function changeUpdatePeriodForUserSelectedSensor(mySocket, userSelectedSensorID, updatePeriod) {
@@ -63,12 +50,6 @@ function changeUpdatePeriodForUserSelectedSensor(mySocket, userSelectedSensorID,
         });
     }
     console.log('update period [ms]: ' + periodMap[updatePeriod.value]);
-}
-
-function updateFileAndPlot(mySocket, userSelectedSensorID, body) {
-    appendToFile(mySocket, body);
-    sensorList.updateTimePeriods_ms[getSensorIndex(userSelectedSensorID)] = sensorList.nextUpdateTimePeriods_ms[getSensorIndex(userSelectedSensorID)];
-
 }
 
 function plotSensorData(mySocket, sensorID) {
@@ -122,10 +103,10 @@ function plotSensorData(mySocket, sensorID) {
     }
 }
 
-function appendToFile(dataFromClient) {// data from client is of the form "25.12, 33.78"
+function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the form "10,20,30,Samil"
     //TODO What to do when file gets too large (>10 MB) --> Use database instead of text file  
-    console.log(dataFromClient);
-    var s = dataFromClient.split(',');
+    console.log(dataFromSensor);
+    var s = dataFromSensor.split(',');
     try {
         var temperatureFromClient_C = parseFloat(s[0].trim());
         var humidityFromClient_percent = parseFloat(s[1].trim());
@@ -192,14 +173,16 @@ function appendToFile(dataFromClient) {// data from client is of the form "25.12
             });
         }
     } catch (err) {
-        console.log('Error while trying to parse "' + dataFromClient + '" and append to file. Message: ' + err);
+        console.log('Error while trying to parse "' + dataFromSensor + '" and append to file. Message: ' + err);
         return err;
     }
     return null;
 }
 
-function getActiveSensorIndex() {
-    return sensorList.sensors.findIndex(x => x === activeSensor);
+function getNextUpdateTimePeriodsForSensor_ms(sensorID) {
+    const iSensor = getSensorIndex(sensorID);
+    sensorList.updateTimePeriods_ms[iSensor] = sensorList.nextUpdateTimePeriods_ms[getSensorIndex(iSensor)]
+    return sensorList.nextUpdateTimePeriods_ms[iSensor];
 }
 
 function getSensorIndex(sensorID) {

@@ -16,26 +16,33 @@ var connections = []; //array holding all active connections.
 
 function handler(req, res) {
     if (req.method === 'POST') { //if sensor has sent data to server
-        var body = '';
+        var dataFromSensor = '';
         req.on('data', chunk => {
-            body += chunk.toString(); // convert Buffer to string
+            dataFromSensor += chunk.toString(); // convert Buffer to string
         });
         req.on('end', () => {
-            if (body.length <= maxNbOfAllowedCharsInPostRequestBody) {
-                const err = socketUtils.appendToFile(body);
+            if (dataFromSensor.length <= maxNbOfAllowedCharsInPostRequestBody) {
+                const err = socketUtils.appendSensorDataToFile(dataFromSensor);
                 if (err === null) {
                     for (let i = 0; i < connections.length; i++) {
                         const connection = connections[i];
-                        socketUtils.plotSensorData(connection.socket, connection.selectedSensorID);
+                        socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
                     }
                 }
-                res.end(socketUtils.getUpdateTimePeriodsForActiveSensor_ms().toString()); //send updateTimePeriod to sensor
+                var s = dataFromSensor.split(',');
+                if (s.length == 4) {//sensor id exists in dataFromSensor
+                    sensorID = s[3].trim();
+                    console.log("Sensor sent ID: " + sensorID);
+                    res.end(socketUtils.getNextUpdateTimePeriodsForSensor_ms(sensorID).toString()); //send next updateTimePeriod to sensor
+                } else {
+                    res.end(periodMap[socketUtils.updatePeriodOneHour].toString()); //send default updateTimePeriod to sensor
+                }
             } else {
                 var ipRemote = req.headers['x-forwarded-for'] ||
                     req.connection.remoteAddress ||
                     req.socket.remoteAddress ||
                     (req.connection.socket ? req.connection.socket.remoteAddress : null);
-                console.error("Invalid post request! ipRemote: " + ipRemote + ", body.length (" + body.length + ") > maxNbOfAllowedChars (" + maxNbOfAllowedCharsInPostRequestBody + ")");
+                console.error("Invalid post request! ipRemote: " + ipRemote + ", body.length (" + dataFromSensor.length + ") > maxNbOfAllowedChars (" + maxNbOfAllowedCharsInPostRequestBody + ")");
                 //Do not return a response to requester because this post request might be from a network/port scanner.
             }
         });
