@@ -20,8 +20,6 @@ var sensorList = {
 };
 
 var defaultSelectedSensorID = sensorList.sensors[1];
-var userSelectedSensorID = defaultSelectedSensorID; //sensor selected by user on HTML page
-var activeSensor; //sensor that last sent data
 
 module.exports = {
     //variables and constants:
@@ -32,7 +30,6 @@ module.exports = {
     periodMap: periodMap,
     sensorList: sensorList,
     defaultSelectedSensorID: defaultSelectedSensorID,
-    selectedSensorID: userSelectedSensorID,
     //functions:
     appendSensorDataToFile: appendSensorDataToFile,
     plotSensorData: plotSensorData,
@@ -54,7 +51,6 @@ function changeUpdatePeriodForUserSelectedSensor(mySocket, userSelectedSensorID,
 
 function plotSensorData(mySocket, sensorID) {
     console.log('sensorID sent by client: ' + sensorID);
-    userSelectedSensorID = sensorID;
     mySocket.emit(showUpdatePeriodsEventName, {
         current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSensorIndex(sensorID)]),
         next: util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSensorIndex(sensorID)])
@@ -86,10 +82,11 @@ function plotSensorData(mySocket, sensorID) {
                 dataInServer = JSON.parse(dataInFile);
                 //Update string in html:
                 const lastDataArrivalTime = dataInServer.temperature.x[dataInServer.temperature.x.length - 1];
-                var lastData =  lastDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = "
+                const lastData = lastDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = "
                     + dataInServer.temperature.y[dataInServer.temperature.y.length - 1].toFixed(nbOfDigits) +
                     ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1].toFixed(nbOfDigits) +
                     ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1].toFixed(nbOfDigits);
+                    console.log("lastData: " + lastData);
                 mySocket.emit(lastDataFromServerEventName, lastData);
                 //Update plot in html:
                 mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: sensorID });
@@ -112,22 +109,26 @@ function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the f
         var humidityFromClient_percent = parseFloat(s[1].trim());
         var pressureFromClient_kPa = parseFloat(s[2].trim()) / 1000;
         var sensorIDFromClient;
-        activeSensor = sensorList.sensors[1]; //default sensor
+        var activeSensorID = sensorList.sensors[1]; //default sensor
         if (s.length == 4) {//sensor id exists in dataFromClient
             sensorIDFromClient = s[3].trim();
             if (sensorList.sensors.findIndex(x => x === sensorIDFromClient) >= 0) {//sensor id exists in sensor list
-                activeSensor = sensorIDFromClient;
+                activeSensorID = sensorIDFromClient;
             }
         }
-        console.log('activeSensor ' + activeSensor + ' used to write to file. userSelectedSensor: ' + userSelectedSensorID);
+        console.log('activeSensorID ' + activeSensorID + ' used to write to file.');
         const lastDataArrivalTime = util.getCurrentDateTime(); //parsing successful, update data arrival time
-        const dataFileName = util.getSensorDataFileName(activeSensor);
+        const dataFileName = util.getSensorDataFileName(activeSensorID);
+        const iSensor = getSensorIndex(activeSensorID);
         if (fs.existsSync(dataFileName)) {
             fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) {
                 if (err) {
                     console.log(err);
                 } else {
                     var dataInServer = JSON.parse(dataInFile);
+                    console.log("iSensor: " + iSensor + ", dataInServer.updateTimePeriod.current: " + dataInServer.updateTimePeriod.current + ", t_ms: " + sensorList.updateTimePeriods_ms[iSensor]);
+                    dataInServer.updateTimePeriod.current = util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[iSensor]);
+                    dataInServer.updateTimePeriod.next = util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor]);
                     //var newX = dataInServer.temperature.x.slice(-1)[0] + 1; //increment x
                     var newX = lastDataArrivalTime;
                     dataInServer.temperature.x.push(newX);
@@ -149,6 +150,10 @@ function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the f
             });
         } else {// data file does not exist for sensor that sent data to server
             var dataInServer = {
+                updateTimePeriod: {
+                    current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[iSensor]),
+                    next: util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor])
+                },
                 temperature: {
                     x: [lastDataArrivalTime],
                     y: [temperatureFromClient_C],
@@ -181,7 +186,7 @@ function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the f
 
 function getNextUpdateTimePeriodsForSensor_ms(sensorID) {
     const iSensor = getSensorIndex(sensorID);
-    sensorList.updateTimePeriods_ms[iSensor] = sensorList.nextUpdateTimePeriods_ms[getSensorIndex(iSensor)]
+    sensorList.updateTimePeriods_ms[iSensor] = sensorList.nextUpdateTimePeriods_ms[iSensor];
     return sensorList.nextUpdateTimePeriods_ms[iSensor];
 }
 

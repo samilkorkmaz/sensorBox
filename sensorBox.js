@@ -6,9 +6,6 @@ const socketUtils = require('./socketUtils.js');
 
 const maxNbOfAllowedCharsInPostRequestBody = 50;
 
-console.log('selectedSensor: ' + socketUtils.selectedSensorID);
-console.log(util.getCurrentDateTime());
-
 const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
 
@@ -61,8 +58,8 @@ function handler(req, res) {
 
 io.on('connection', function (socket) {
     var connection = {
-        socket : socket,
-        userSelectedSensorID : socketUtils.defaultSelectedSensorID
+        socket: socket,
+        userSelectedSensorID: socketUtils.defaultSelectedSensorID
     }
     connections.push(connection);
     console.log('A new WebSocket connection has been established');
