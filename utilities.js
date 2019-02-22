@@ -10,7 +10,6 @@ module.exports = {
 
     getSensorDataFileName: function (sensorID) {
         const dataFileName = 'dataFor' + sensorID + '.json'; //Note: File name cannot contain Turkish characters.
-        console.log(dataFileName);
         return dataFileName;
     },
 

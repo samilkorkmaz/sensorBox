@@ -41,7 +41,7 @@
         function changePeriod() {
             const i = document.getElementById("updatePeriod").selectedIndex;
             const updatePeriod = document.getElementById("updatePeriod").options[i].text;
-            alert("Update period " + updatePeriod + " will be in effect after next data update.");
+            alert("Update period " + updatePeriod + " will be in effect after next sensor data post to server.");
             socket.emit(changeUpdatePeriodEventName, { value: updatePeriod });
         }
 

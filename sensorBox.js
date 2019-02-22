@@ -11,6 +11,20 @@ const sensorChangedEventName = 'sensorChanged';
 
 var connections = []; //array holding all active connections.
 
+function updatePlots(dataFromSensor, res) {
+    for (let i = 0; i < connections.length; i++) {
+        const connection = connections[i];
+        socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
+    }
+    var s = dataFromSensor.split(',');
+    if (s.length == 4) {//sensor id exists in dataFromSensor
+        sensorID = s[3].trim();
+        res.end(socketUtils.getUpdateTimePeriodsForSensor_ms(sensorID).toString()); //send updateTimePeriod to sensor
+    } else {
+        res.end(periodMap[socketUtils.updatePeriodOneHour].toString()); //send default updateTimePeriod to sensor
+    }
+}
+
 function handler(req, res) {
     if (req.method === 'POST') { //if sensor has sent data to server
         var dataFromSensor = '';
@@ -19,21 +33,7 @@ function handler(req, res) {
         });
         req.on('end', () => {
             if (dataFromSensor.length <= maxNbOfAllowedCharsInPostRequestBody) {
-                const err = socketUtils.appendSensorDataToFile(dataFromSensor);
-                if (err === null) {
-                    for (let i = 0; i < connections.length; i++) {
-                        const connection = connections[i];
-                        socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
-                    }
-                }
-                var s = dataFromSensor.split(',');
-                if (s.length == 4) {//sensor id exists in dataFromSensor
-                    sensorID = s[3].trim();
-                    console.log("Sensor sent ID: " + sensorID);
-                    res.end(socketUtils.getNextUpdateTimePeriodsForSensor_ms(sensorID).toString()); //send next updateTimePeriod to sensor
-                } else {
-                    res.end(periodMap[socketUtils.updatePeriodOneHour].toString()); //send default updateTimePeriod to sensor
-                }
+                socketUtils.appendSensorDataToFile(dataFromSensor, res, updatePlots);
             } else {
                 var ipRemote = req.headers['x-forwarded-for'] ||
                     req.connection.remoteAddress ||

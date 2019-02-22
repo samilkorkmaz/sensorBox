@@ -34,15 +34,16 @@ module.exports = {
     appendSensorDataToFile: appendSensorDataToFile,
     plotSensorData: plotSensorData,
     changeUpdatePeriodForUserSelectedSensor: changeUpdatePeriodForUserSelectedSensor,
-    getNextUpdateTimePeriodsForSensor_ms: getNextUpdateTimePeriodsForSensor_ms
+    getUpdateTimePeriodsForSensor_ms: getUpdateTimePeriodsForSensor_ms
 }
 
-function changeUpdatePeriodForUserSelectedSensor(mySocket, userSelectedSensorID, updatePeriod) {
+function changeUpdatePeriodForUserSelectedSensor(mySocket, sensorID, updatePeriod) {
     console.log('new updatePeriod.value: ' + updatePeriod.value);
     if (periodMap[updatePeriod.value] !== undefined) {
-        sensorList.nextUpdateTimePeriods_ms[getSensorIndex(userSelectedSensorID)] = periodMap[updatePeriod.value];
+        sensorList.nextUpdateTimePeriods_ms[getSensorIndex(sensorID)] = periodMap[updatePeriod.value];
+        updateTimePeriodsInFile(sensorID);
         mySocket.emit(showUpdatePeriodsEventName, {
-            current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSensorIndex(userSelectedSensorID)]),
+            current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSensorIndex(sensorID)]),
             next: updatePeriod.value
         });
     }
@@ -51,12 +52,11 @@ function changeUpdatePeriodForUserSelectedSensor(mySocket, userSelectedSensorID,
 
 function plotSensorData(mySocket, sensorID) {
     console.log('sensorID sent by client: ' + sensorID);
-    mySocket.emit(showUpdatePeriodsEventName, {
-        current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSensorIndex(sensorID)]),
-        next: util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[getSensorIndex(sensorID)])
-    });
-
-    var dataInServer = {
+    var dataInServer = { //default data to be used in case data file does not exist yet
+        updateTimePeriod: {
+            current: "1hr",
+            next: "1hr"
+        },
         temperature: {
             x: [NaN],
             y: [NaN],
@@ -86,11 +86,14 @@ function plotSensorData(mySocket, sensorID) {
                     + dataInServer.temperature.y[dataInServer.temperature.y.length - 1].toFixed(nbOfDigits) +
                     ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1].toFixed(nbOfDigits) +
                     ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1].toFixed(nbOfDigits);
-                    console.log("lastData: " + lastData);
                 mySocket.emit(lastDataFromServerEventName, lastData);
                 //Update plot in html:
                 mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: sensorID });
                 mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: sensorID });
+                mySocket.emit(showUpdatePeriodsEventName, {
+                    current: dataInServer.updateTimePeriod.current,
+                    next: dataInServer.updateTimePeriod.next
+                });
             }
         });
     } else { //no data exists
@@ -100,9 +103,8 @@ function plotSensorData(mySocket, sensorID) {
     }
 }
 
-function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the form "10,20,30,Samil"
+function appendSensorDataToFile(dataFromSensor, res, callback) {// data from sensor is of the form "10,20,30,Samil"
     //TODO What to do when file gets too large (>10 MB) --> Use database instead of text file  
-    console.log(dataFromSensor);
     var s = dataFromSensor.split(',');
     try {
         var temperatureFromClient_C = parseFloat(s[0].trim());
@@ -120,6 +122,7 @@ function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the f
         const lastDataArrivalTime = util.getCurrentDateTime(); //parsing successful, update data arrival time
         const dataFileName = util.getSensorDataFileName(activeSensorID);
         const iSensor = getSensorIndex(activeSensorID);
+        sensorList.updateTimePeriods_ms[iSensor] = sensorList.nextUpdateTimePeriods_ms[iSensor]; //on sensor data post, current = next
         if (fs.existsSync(dataFileName)) {
             fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) {
                 if (err) {
@@ -127,8 +130,12 @@ function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the f
                 } else {
                     var dataInServer = JSON.parse(dataInFile);
                     console.log("iSensor: " + iSensor + ", dataInServer.updateTimePeriod.current: " + dataInServer.updateTimePeriod.current + ", t_ms: " + sensorList.updateTimePeriods_ms[iSensor]);
+
+                    console.log("current: " + util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[iSensor]));
+                    console.log("next   : " + util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor]));
                     dataInServer.updateTimePeriod.current = util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[iSensor]);
                     dataInServer.updateTimePeriod.next = util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor]);
+                    
                     //var newX = dataInServer.temperature.x.slice(-1)[0] + 1; //increment x
                     var newX = lastDataArrivalTime;
                     dataInServer.temperature.x.push(newX);
@@ -144,6 +151,8 @@ function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the f
                     fs.writeFile(dataFileName, json, 'utf8', function (err, data) {
                         if (err) {
                             console.log(err);
+                        } else {
+                            callback(dataFromSensor, res);
                         }
                     });
                 }
@@ -174,20 +183,41 @@ function appendSensorDataToFile(dataFromSensor) {// data from sensor is of the f
             fs.writeFile(dataFileName, json, 'utf8', function (err, data) {
                 if (err) {
                     console.log(err);
+                } else {
+                    callback(dataFromSensor, res);
                 }
             });
         }
     } catch (err) {
         console.log('Error while trying to parse "' + dataFromSensor + '" and append to file. Message: ' + err);
-        return err;
     }
-    return null;
 }
 
-function getNextUpdateTimePeriodsForSensor_ms(sensorID) {
-    const iSensor = getSensorIndex(sensorID);
-    sensorList.updateTimePeriods_ms[iSensor] = sensorList.nextUpdateTimePeriods_ms[iSensor];
-    return sensorList.nextUpdateTimePeriods_ms[iSensor];
+function getUpdateTimePeriodsForSensor_ms(sensorID) {
+    return sensorList.updateTimePeriods_ms[getSensorIndex(sensorID)];
+}
+
+function updateTimePeriodsInFile(sensorID) {
+    const dataFileName = util.getSensorDataFileName(sensorID);
+    if (fs.existsSync(dataFileName)) {
+        fs.readFile(dataFileName, 'utf8', function readFileCallback(err, dataInFile) {
+            if (err) {
+                console.log(err);
+            } else {
+                var dataInServer = JSON.parse(dataInFile);
+                const iSensor = getSensorIndex(sensorID);
+                dataInServer.updateTimePeriod.current = util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[iSensor]);
+                dataInServer.updateTimePeriod.next = util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor]);
+                console.log("Updating time periods in " + dataFileName +", current: " + dataInServer.updateTimePeriod.current + ", next: " + dataInServer.updateTimePeriod.next);
+                json = JSON.stringify(dataInServer); //convert it back to json
+                fs.writeFile(dataFileName, json, 'utf8', function (err, data) {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
+            }
+        });
+    }
 }
 
 function getSensorIndex(sensorID) {
