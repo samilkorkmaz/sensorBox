@@ -12,7 +12,7 @@ const sensorChangedEventName = 'sensorChanged';
 var connections = []; //array holding all active connections.
 
 function updatePlots(dataFromSensor, res) {
-    for (let i = 0; i < connections.length; i++) {
+    for (var i = 0; i < connections.length; i++) {
         const connection = connections[i];
         socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
     }
@@ -68,7 +68,7 @@ io.on('connection', function (socket) {
 
     socket.on('disconnect', function () {
         console.log('WS client disconnect!');
-        for (let i = 0; i < connections.length; i++) {
+        for (var i = 0; i < connections.length; i++) {
             const connect = connections[i];
             if (connect.socket.id === socket.id) {
                 connections.splice(i, 1); //remove connection from array
