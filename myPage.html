@@ -61,6 +61,10 @@
         });
 
         function sensorClicked(sensor) {
+            Plotly.purge(plotAreaTemperature);
+            Plotly.purge(plotAreaHumidity);
+            Plotly.purge(plotAreaPressure);
+            plotAreaTemperature.innerHTML = "<H2>Waiting for plot data...</H2>";
             socket.emit(sensorChangedEventName, sensor.id);
         }
 
