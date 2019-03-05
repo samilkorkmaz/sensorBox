@@ -12,6 +12,7 @@ const sensorChangedEventName = 'sensorChanged';
 var connections = []; //array holding all active connections.
 
 function updatePlots(dataFromSensor, res) {
+    console.log("updatePlots()");
     for (var i = 0; i < connections.length; i++) {
         const connection = connections[i];
         socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
@@ -39,7 +40,7 @@ function handler(req, res) {
                     req.connection.remoteAddress ||
                     req.socket.remoteAddress ||
                     (req.connection.socket ? req.connection.socket.remoteAddress : null);
-                console.error("Invalid post request! ipRemote: " + ipRemote + ", body.length (" + dataFromSensor.length + ") > maxNbOfAllowedChars (" + maxNbOfAllowedCharsInPostRequestBody + ")");
+                console.error("handler() Invalid post request! ipRemote: " + ipRemote + ", body.length (" + dataFromSensor.length + ") > maxNbOfAllowedChars (" + maxNbOfAllowedCharsInPostRequestBody + ")");
                 //Do not return a response to requester because this post request might be from a network/port scanner.
             }
         });
