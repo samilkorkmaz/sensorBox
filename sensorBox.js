@@ -12,7 +12,7 @@ const sensorChangedEventName = 'sensorChanged';
 var connections = []; //array holding all active connections.
 
 function updatePlots(dataFromSensor, res) {
-    console.log("updatePlots()");
+    util.logWithTimeStamp("updatePlots()");
     for (var i = 0; i < connections.length; i++) {
         const connection = connections[i];
         socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
@@ -21,8 +21,8 @@ function updatePlots(dataFromSensor, res) {
     if (s.length == 4) {//sensor id exists in dataFromSensor
         sensorID = s[3].trim();
         res.end(socketUtils.getUpdateTimePeriodsForSensor_ms(sensorID).toString()); //send updateTimePeriod to sensor
-    } else {
-        res.end(periodMap[socketUtils.updatePeriodOneHour].toString()); //send default updateTimePeriod to sensor
+    } else { //sensor id not present in dataFromSensor
+        res.end(socketUtils.periodMap[socketUtils.updatePeriodOneHour].toString()); //send default updateTimePeriod to sensor
     }
 }
 
@@ -63,17 +63,17 @@ io.on('connection', function (socket) {
         userSelectedSensorID: socketUtils.defaultSelectedSensorID
     }
     connections.push(connection);
-    console.log('A new WebSocket connection has been established');
-    console.log("IP: " + socket.request.connection.remoteAddress + ", socket.id: " + socket.id);
+    util.logWithTimeStamp('A new WebSocket connection has been established');
+    util.logWithTimeStamp("IP: " + socket.request.connection.remoteAddress + ", socket.id: " + socket.id);
     socketUtils.plotSensorData(socket, connection.userSelectedSensorID);
 
     socket.on('disconnect', function () {
-        console.log('WS client disconnect!');
+        util.logWithTimeStamp('WS client disconnect!');
         for (var i = 0; i < connections.length; i++) {
             const connect = connections[i];
             if (connect.socket.id === socket.id) {
                 connections.splice(i, 1); //remove connection from array
-                console.log("Removed socket from connections. id: " + socket.id + ". connections.length = " + connections.length);
+                util.logWithTimeStamp("Removed socket from connections. id: " + socket.id + ". connections.length = " + connections.length);
                 break;
             }
         }
@@ -92,11 +92,11 @@ io.on('connection', function (socket) {
 //app.listen(3060, '127.0.0.1', function () {
 //app.listen(3060, '0.0.0.0', function () {
 app.listen(3060, function () {
-    console.log('Sensorbox server listening on *:3060');
+    util.logWithTimeStamp('Sensorbox server listening on *:3060');
 }).on('error', function (err) {
     if (err.errno === 'EADDRINUSE') {
-        console.log('ERROR: Port ' + err.port + ' is already in use! Have you forgotten to close previous server session?');
+        util.logWithTimeStamp('ERROR: Port ' + err.port + ' is already in use! Have you forgotten to close previous server session?');
     } else {
-        console.log(err);
+        util.logWithTimeStamp(err);
     }
 });
