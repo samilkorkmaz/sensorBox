@@ -12,7 +12,7 @@ const sensorChangedEventName = 'sensorChanged';
 var connections = []; //array holding all active connections.
 
 function updatePlots(dataFromSensor, res) {
-    console.log("updatePlots()");
+    console.log(util.getCurrentDateTimeMs(), "updatePlots()");
     for (var i = 0; i < connections.length; i++) {
         const connection = connections[i];
         socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
@@ -63,17 +63,17 @@ io.on('connection', function (socket) {
         userSelectedSensorID: socketUtils.defaultSelectedSensorID
     }
     connections.push(connection);
-    console.log('A new WebSocket connection has been established');
-    console.log("IP: " + socket.request.connection.remoteAddress + ", socket.id: " + socket.id);
+    console.log(util.getCurrentDateTimeMs(), 'A new WebSocket connection has been established');
+    console.log(util.getCurrentDateTimeMs(), "IP: " + socket.request.connection.remoteAddress + ", socket.id: " + socket.id);
     socketUtils.plotSensorData(socket, connection.userSelectedSensorID);
 
     socket.on('disconnect', function () {
-        console.log('WS client disconnect!');
+        console.log(util.getCurrentDateTimeMs(), 'WS client disconnect!');
         for (var i = 0; i < connections.length; i++) {
             const connect = connections[i];
             if (connect.socket.id === socket.id) {
                 connections.splice(i, 1); //remove connection from array
-                console.log("Removed socket from connections. id: " + socket.id + ". connections.length = " + connections.length);
+                console.log(util.getCurrentDateTimeMs(), "Removed socket from connections. id: " + socket.id + ". connections.length = " + connections.length);
                 break;
             }
         }
@@ -92,11 +92,11 @@ io.on('connection', function (socket) {
 //app.listen(3060, '127.0.0.1', function () {
 //app.listen(3060, '0.0.0.0', function () {
 app.listen(3060, function () {
-    console.log('Sensorbox server listening on *:3060');
+    console.log(util.getCurrentDateTimeMs(), 'Sensorbox server listening on *:3060');
 }).on('error', function (err) {
     if (err.errno === 'EADDRINUSE') {
-        console.log('ERROR: Port ' + err.port + ' is already in use! Have you forgotten to close previous server session?');
+        console.log(util.getCurrentDateTimeMs(), 'ERROR: Port ' + err.port + ' is already in use! Have you forgotten to close previous server session?');
     } else {
-        console.log(err);
+        console.log(util.getCurrentDateTimeMs(), err);
     }
 });

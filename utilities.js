@@ -20,7 +20,7 @@ module.exports = {
     getCurrentDateTimeMs: function () {
         var date = new Date();
         var ms = date.getMilliseconds();
-        return  getCurrentDateTime() + ":" + pad(ms, 3); 
+        return  getCurrentDateTime() + ":" + pad(ms, 3) + " "; 
     }
     
 }
@@ -36,9 +36,9 @@ function getCurrentDateTime() {
     
     var rawDay = hourTurkeyTime < 24 ? date.getDate() : date.getDate() + 1; //day of month. if you use getDay(), it will return day of week
     var day = rawDay <= daysInMonth(date.getMonth() + 1, date.getFullYear()) ? rawDay : 1;
-    /*console.log("rawDay: " + rawDay);
-    console.log("days in month: " + daysInMonth(date.getMonth() + 1, date.getFullYear()));
-    console.log("day: " + day);*/
+    /*console.log(util.getCurrentDateTimeMs(), "rawDay: " + rawDay);
+    console.log(util.getCurrentDateTimeMs(), "days in month: " + daysInMonth(date.getMonth() + 1, date.getFullYear()));
+    console.log(util.getCurrentDateTimeMs(), "day: " + day);*/
     var rawMonth = rawDay <= daysInMonth(date.getMonth() + 1, date.getFullYear()) ? date.getMonth() + 1 : date.getMonth() + 2; //January = 0
     
     var month = rawMonth < 13 ? rawMonth : 1;
