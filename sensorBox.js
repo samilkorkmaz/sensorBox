@@ -21,8 +21,8 @@ function updatePlots(dataFromSensor, res) {
     if (s.length == 4) {//sensor id exists in dataFromSensor
         sensorID = s[3].trim();
         res.end(socketUtils.getUpdateTimePeriodsForSensor_ms(sensorID).toString()); //send updateTimePeriod to sensor
-    } else {
-        res.end(periodMap[socketUtils.updatePeriodOneHour].toString()); //send default updateTimePeriod to sensor
+    } else { //sensor id not present in dataFromSensor
+        res.end(socketUtils.periodMap[socketUtils.updatePeriodOneHour].toString()); //send default updateTimePeriod to sensor
     }
 }
 
