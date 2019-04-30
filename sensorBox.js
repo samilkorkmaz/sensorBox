@@ -11,6 +11,8 @@ const sensorChangedEventName = 'sensorChanged';
 
 var connections = []; //array holding all active connections.
 
+util.logWithTimeStamp("Sensorbox started.");
+
 function updatePlots(dataFromSensor, res) {
     util.logWithTimeStamp("updatePlots()");
     for (var i = 0; i < connections.length; i++) {
