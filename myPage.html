@@ -81,7 +81,7 @@
                     color: 'rgb(255, 0, 0)',
                     width: 3
                 }
-            }], { margin: { t: 60 }, title: 'Temperature [' + String.fromCharCode(176) + 'C]', yaxis: { range: [-10, 50], dtick: 5 } });
+            }], { margin: { t: 60 }, title: 'Temperature [' + String.fromCharCode(176) + 'C]', yaxis: { range: [-30, 50], dtick: 5 } });
             Plotly.newPlot(plotAreaHumidity, [{ x: dataInServer.humidity.x, y: dataInServer.humidity.y, mode: 'lines+markers', line: { color: 'rgb(0, 255, 0)' } }], { margin: { t: 60 }, title: 'Humidity [%]', yaxis: { range: [0, 100] } });
             Plotly.newPlot(plotAreaPressure, [{ x: dataInServer.pressure.x, y: dataInServer.pressure.y, mode: 'lines+markers', line: { color: 'rgb(0, 0, 255)' } }], { margin: { t: 60 }, title: 'Pressure [kPa]' });
         });

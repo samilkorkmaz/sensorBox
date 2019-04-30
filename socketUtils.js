@@ -120,7 +120,7 @@ function appendSensorDataToFile(dataFromSensor, res, callback) {// data from sen
                 activeSensorID = sensorIDFromClient;
             }
         }
-        util.logWithTimeStamp('appendSensorDataToFile() activeSensorID ' + activeSensorID + ' used to write to file.');
+        util.logWithTimeStamp('appendSensorDataToFile() activeSensorID ' + activeSensorID + ' used to write to file. dataFromSensor: ' + dataFromSensor);
         const lastDataArrivalTime = util.getCurrentDateTime(); //parsing successful, update data arrival time
         const dataFileName = util.getSensorDataFileName(activeSensorID);
         const iSensor = getSensorIndex(activeSensorID);
@@ -137,7 +137,7 @@ function appendSensorDataToFile(dataFromSensor, res, callback) {// data from sen
                     util.logWithTimeStamp("appendSensorDataToFile() next   : " + util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor]));
                     dataInServer.updateTimePeriod.current = util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[iSensor]);
                     dataInServer.updateTimePeriod.next = util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor]);
-                    
+
                     //var newX = dataInServer.temperature.x.slice(-1)[0] + 1; //increment x
                     var newX = lastDataArrivalTime;
                     dataInServer.temperature.x.push(newX);
@@ -211,7 +211,7 @@ function updateTimePeriodsInFile(sensorID) {
                 const iSensor = getSensorIndex(sensorID);
                 dataInServer.updateTimePeriod.current = util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[iSensor]);
                 dataInServer.updateTimePeriod.next = util.getKeyByValue(periodMap, sensorList.nextUpdateTimePeriods_ms[iSensor]);
-                util.logWithTimeStamp("updateTimePeriodsInFile() Updating time periods in " + dataFileName +", current: " + dataInServer.updateTimePeriod.current + ", next: " + dataInServer.updateTimePeriod.next);
+                util.logWithTimeStamp("updateTimePeriodsInFile() Updating time periods in " + dataFileName + ", current: " + dataInServer.updateTimePeriod.current + ", next: " + dataInServer.updateTimePeriod.next);
                 json = JSON.stringify(dataInServer); //convert it back to json
                 fs.writeFile(dataFileName, json, 'utf8', function (err, data) {
                     if (err) {
