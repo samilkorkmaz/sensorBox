@@ -1,8 +1,4 @@
 module.exports = {
-    pad: function (num) {
-        return pad(num);
-    },
-
     //https://stackoverflow.com/a/28191966/51358
     getKeyByValue: function (object, value) {
         return Object.keys(object).find(key => object[key] === value);
@@ -51,14 +47,14 @@ function getCurrentDateTime() {
 
     var month = rawMonth < 13 ? rawMonth : 1;
     var year = rawMonth < 13 ? date.getFullYear() : date.getFullYear() + 1;
-    return year + '-' + pad(month) + '-' + pad(day) + ' ' + pad(hour) + ':' + pad(min) + ':' + pad(sec); //plotly format
+    return year + '-' + pad2(month) + '-' + pad2(day) + ' ' + pad2(hour) + ':' + pad2(min) + ':' + pad2(sec); //plotly format
 }
 
 function daysInMonth(month, year) { // Use 1 for January, 2 for February, etc. https://stackoverflow.com/a/315767/51358
     return new Date(year, month, 0).getDate();
 }
 
-function pad(num) {
+function pad2(num) {//Note that JS does not support method overloading, therefore I had to name this method pad2()
     return pad(num, 2);
 }
 
