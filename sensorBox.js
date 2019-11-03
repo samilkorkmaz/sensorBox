@@ -5,6 +5,7 @@ const util = require('./utilities.js');
 const socketUtils = require('./socketUtils.js');
 
 const maxNbOfAllowedCharsInPostRequestBody = 50;
+const maxNbOfReasonableWebSocketConnections = 10;
 
 const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
@@ -14,7 +15,7 @@ var connections = []; //array holding all active connections.
 util.logWithTimeStamp("Sensorbox started.");
 
 function updatePlots(dataFromSensor, res) {
-    util.logWithTimeStamp("updatePlots()");
+    util.logWithTimeStamp("updatePlots() for " + connections.length + " connections.");
     for (var i = 0; i < connections.length; i++) {
         const connection = connections[i];
         socketUtils.plotSensorData(connection.socket, connection.userSelectedSensorID);
@@ -42,7 +43,7 @@ function handler(req, res) {
                     req.connection.remoteAddress ||
                     req.socket.remoteAddress ||
                     (req.connection.socket ? req.connection.socket.remoteAddress : null);
-                console.error("handler() Invalid post request! ipRemote: " + ipRemote + ", body.length (" + dataFromSensor.length + ") > maxNbOfAllowedChars (" + maxNbOfAllowedCharsInPostRequestBody + ")");
+                    util.errorWithTimeStamp("handler() Invalid post request! ipRemote: " + ipRemote + ", body.length (" + dataFromSensor.length + ") > maxNbOfAllowedChars (" + maxNbOfAllowedCharsInPostRequestBody + ")");
                 //Do not return a response to requester because this post request might be from a network/port scanner.
             }
         });
@@ -62,15 +63,27 @@ function handler(req, res) {
 io.on('connection', function (socket) {
     var connection = {
         socket: socket,
-        userSelectedSensorID: socketUtils.defaultSelectedSensorID
+        userSelectedSensorID: socketUtils.defaultSelectedSensorID,
+        dateAdded: util.getCurrentDateTimeMs()
     }
     connections.push(connection);
-    util.logWithTimeStamp('A new WebSocket connection has been established');
+
+    if(connections.length > maxNbOfReasonableWebSocketConnections) {
+        var connectionInfo = "";
+        for (var i = 0; i < connections.length; i++) {
+            connectionInfo += ", connection socket.id" + connections[i].socket.id + 
+            ", dateAdded: " + connections[i].dateAdded; 
+        }    
+        util.logWithTimeStamp("Nb of WebSocket connections is too large: " + connections.length + 
+            connectionInfo);
+    }
+
+    util.logWithTimeStamp('A new WebSocket connection has been established. Total nb of connections: ' + connections.length);
     util.logWithTimeStamp("IP: " + socket.request.connection.remoteAddress + ", socket.id: " + socket.id);
     socketUtils.plotSensorData(socket, connection.userSelectedSensorID);
 
     socket.on('disconnect', function () {
-        util.logWithTimeStamp('WS client disconnect!');
+        util.logWithTimeStamp('WebSocket client disconnect.');
         for (var i = 0; i < connections.length; i++) {
             const connect = connections[i];
             if (connect.socket.id === socket.id) {

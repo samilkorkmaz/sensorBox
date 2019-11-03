@@ -51,7 +51,7 @@ function changeUpdatePeriodForUserSelectedSensor(mySocket, sensorID, updatePerio
 }
 
 function plotSensorData(mySocket, sensorID) {
-    util.logWithTimeStamp('plotSensorData() sensorID sent by client: ' + sensorID);
+    util.logWithTimeStamp('plotSensorData() socket.id: ' + mySocket.id + ', sensorID sent by client: ' + sensorID);
     var dataInServer = { //default data to be used in case data file does not exist yet
         updateTimePeriod: {
             current: "1hr",
@@ -105,7 +105,7 @@ function plotSensorData(mySocket, sensorID) {
     }
 }
 
-function appendSensorDataToFile(dataFromSensor, res, callback) {// data from sensor is of the form "10,20,30,Samil"
+function appendSensorDataToFile(dataFromSensor, res, updatePlotsCallback) {// data from sensor is of the form "10,20,30,Samil"
     //TODO What to do when file gets too large (>10 MB) --> Use database instead of text file  
     var s = dataFromSensor.split(',');
     try {
@@ -155,7 +155,7 @@ function appendSensorDataToFile(dataFromSensor, res, callback) {// data from sen
                             util.logWithTimeStamp(err);
                         } else {
                             util.logWithTimeStamp("appendSensorDataToFile() Writing of data to " + dataFileName + " finished.")
-                            callback(dataFromSensor, res);
+                            updatePlotsCallback(dataFromSensor, res);
                         }
                     });
                 }
@@ -187,7 +187,7 @@ function appendSensorDataToFile(dataFromSensor, res, callback) {// data from sen
                 if (err) {
                     util.logWithTimeStamp(err);
                 } else {
-                    callback(dataFromSensor, res);
+                    updatePlotsCallback(dataFromSensor, res);
                 }
             });
         }

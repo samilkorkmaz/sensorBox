@@ -19,6 +19,10 @@ module.exports = {
 
     logWithTimeStamp: function (message) {
         console.log(getCurrentDateTimeMs(), message);
+    },
+
+    errorWithTimeStamp: function (message) {
+        console.error(getCurrentDateTimeMs(), message);
     }
 
 }
