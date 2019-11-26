@@ -11,14 +11,6 @@
     <h1>Sensor Box</h1>
     <div id="dataArea">Awaiting data...</div>
     <div id="sensorRadioButtons"></div>
-    Update period: <select id="updatePeriod">
-        <option>10s</option>
-        <option>10min</option>
-        <option selected>1hr</option>
-        <option>3hr</option>
-    </select>
-    <div id="updatePeriods"></div>
-    <button onclick="changePeriod()">Change</button>
     <div id="plotAreaTemperature" style="width:600px;height:300px;"></div>
     <div id="plotAreaHumidity" style="width:600px;height:300px;"></div>
     <div id="plotAreaPressure" style="width:600px;height:300px;"></div>
@@ -28,22 +20,13 @@
 
         const plotDataFromServerEventName = 'plotDataFromServer';
         const lastDataFromServerEventName = 'lastDataFromServer';
-        const changeUpdatePeriodEventName = 'changeUpdatePeriod';
         const updateSensorRadioButtonsEventName = 'updateSensorRadioButtons';
         const sensorChangedEventName = 'sensorChanged';
-        const showUpdatePeriodsEventName = 'showUpdatePeriods';
 
         var plotAreaTemperature = document.getElementById('plotAreaTemperature');
         var plotAreaHumidity = document.getElementById('plotAreaHumidity');
         var plotAreaPressure = document.getElementById('plotAreaPressure');
         var dataArea = document.getElementById('dataArea');
-
-        function changePeriod() {
-            const i = document.getElementById("updatePeriod").selectedIndex;
-            const updatePeriod = document.getElementById("updatePeriod").options[i].text;
-            alert("Update period " + updatePeriod + " will be in effect after next sensor data post to server.");
-            socket.emit(changeUpdatePeriodEventName, { value: updatePeriod });
-        }
 
         socket.on(updateSensorRadioButtonsEventName, function (data) {
             var htmlStr = "<form>";            
@@ -89,10 +72,6 @@
         socket.on(lastDataFromServerEventName, function (data) {
             console.log(data);
             dataArea.innerHTML = "<h2>" + data + "</h2>";
-        });
-
-        socket.on(showUpdatePeriodsEventName, function (data) {
-            document.getElementById('updatePeriods').innerHTML = "Update periods - current: " + data.current + ", next: " + data.next;
         });
     </script>
 </body>

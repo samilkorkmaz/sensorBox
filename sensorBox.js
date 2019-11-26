@@ -7,7 +7,6 @@ const socketUtils = require('./socketUtils.js');
 const maxNbOfAllowedCharsInPostRequestBody = 50;
 const maxNbOfReasonableWebSocketConnections = 10;
 
-const changeUpdatePeriodEventName = 'changeUpdatePeriod';
 const sensorChangedEventName = 'sensorChanged';
 
 var connections = []; //array holding all active connections.
@@ -92,10 +91,6 @@ io.on('connection', function (socket) {
                 break;
             }
         }
-    });
-
-    socket.on(changeUpdatePeriodEventName, function (updatePeriod) {
-        socketUtils.changeUpdatePeriodForUserSelectedSensor(socket, connection.userSelectedSensorID, updatePeriod);
     });
 
     socket.on(sensorChangedEventName, function (sensorID) {

@@ -11,7 +11,6 @@ const periodMap = {
 const updateSensorRadioButtonsEventName = 'updateSensorRadioButtons';
 const plotDataFromServerEventName = 'plotDataFromServer';
 const lastDataFromServerEventName = 'lastDataFromServer';
-const showUpdatePeriodsEventName = 'showUpdatePeriods';
 
 var sensorList = {
     sensors: ["Samil", "Murat", "Samil_BME280"],
@@ -19,13 +18,12 @@ var sensorList = {
     nextUpdateTimePeriods_ms: [3600 * 1000, 3600 * 1000, 3600 * 1000]
 };
 
-var defaultSelectedSensorID = sensorList.sensors[1];
+var defaultSelectedSensorID = sensorList.sensors[0];
 
 module.exports = {
     //variables and constants:
     plotDataFromServerEventName: plotDataFromServerEventName,
     lastDataFromServerEventName: lastDataFromServerEventName,
-    showUpdatePeriodsEventName: showUpdatePeriodsEventName,
     updatePeriodOneHour: updatePeriodOneHour,
     periodMap: periodMap,
     sensorList: sensorList,
@@ -33,21 +31,7 @@ module.exports = {
     //functions:
     appendSensorDataToFile: appendSensorDataToFile,
     plotSensorData: plotSensorData,
-    changeUpdatePeriodForUserSelectedSensor: changeUpdatePeriodForUserSelectedSensor,
     getUpdateTimePeriodsForSensor_ms: getUpdateTimePeriodsForSensor_ms
-}
-
-function changeUpdatePeriodForUserSelectedSensor(mySocket, sensorID, updatePeriod) {
-    util.logWithTimeStamp('changeUpdatePeriodForUserSelectedSensor() new updatePeriod.value: ' + updatePeriod.value);
-    if (periodMap[updatePeriod.value] !== undefined) {
-        sensorList.nextUpdateTimePeriods_ms[getSensorIndex(sensorID)] = periodMap[updatePeriod.value];
-        updateTimePeriodsInFile(sensorID);
-        mySocket.emit(showUpdatePeriodsEventName, {
-            current: util.getKeyByValue(periodMap, sensorList.updateTimePeriods_ms[getSensorIndex(sensorID)]),
-            next: updatePeriod.value
-        });
-    }
-    util.logWithTimeStamp('changeUpdatePeriodForUserSelectedSensor() update period [ms]: ' + periodMap[updatePeriod.value]);
 }
 
 function plotSensorData(mySocket, sensorID) {
@@ -90,11 +74,7 @@ function plotSensorData(mySocket, sensorID) {
                 mySocket.emit(lastDataFromServerEventName, lastData);
                 //Update plot in html:
                 mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: sensorID });
-                mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: sensorID });
-                mySocket.emit(showUpdatePeriodsEventName, {
-                    current: dataInServer.updateTimePeriod.current,
-                    next: dataInServer.updateTimePeriod.next
-                });
+                mySocket.emit(updateSensorRadioButtonsEventName, { sensorList, selectedSensor: sensorID });                
             }
         });
     } else { //no data exists
