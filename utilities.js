@@ -21,6 +21,10 @@ module.exports = {
         console.log(getCurrentDateTimeMs(), message);
     },
 
+    warningWithTimeStamp: function (message) {
+        console.warn(getCurrentDateTimeMs(), message);
+    },
+
     errorWithTimeStamp: function (message) {
         console.error(getCurrentDateTimeMs(), message);
     }

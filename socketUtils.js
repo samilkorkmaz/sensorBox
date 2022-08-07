@@ -65,12 +65,17 @@ function plotSensorData(mySocket, sensorID) {
             } else {
                 util.logWithTimeStamp("plotSensorData() " + dataFileName + " read.");
                 dataInServer = JSON.parse(dataInFile);
+                let iLastValidData = dataInServer.temperature.y.length - 1;
+                if(dataInServer.temperature.y[iLastValidData] === null) {
+                    util.warningWithTimeStamp("Last temperature data is null, trying to use previous data!")
+                    iLastValidData = dataInServer.temperature.y.length - 2;
+                }
                 //Update string in html:
                 const lastDataArrivalTime = dataInServer.temperature.x[dataInServer.temperature.x.length - 1];
                 const lastData = lastDataArrivalTime + ", Temp [" + String.fromCharCode(176) + "C], Humid[%], Pres [kPa] = "
-                    + dataInServer.temperature.y[dataInServer.temperature.y.length - 1].toFixed(nbOfDigits) +
-                    ", " + dataInServer.humidity.y[dataInServer.humidity.y.length - 1].toFixed(nbOfDigits) +
-                    ", " + dataInServer.pressure.y[dataInServer.pressure.y.length - 1].toFixed(nbOfDigits);
+                    + dataInServer.temperature.y[iLastValidData].toFixed(nbOfDigits) +
+                    ", " + dataInServer.humidity.y[iLastValidData].toFixed(nbOfDigits) +
+                    ", " + dataInServer.pressure.y[iLastValidData].toFixed(nbOfDigits);
                 mySocket.emit(lastDataFromServerEventName, lastData);
                 //Update plot in html:
                 mySocket.emit(plotDataFromServerEventName, { dataInServer, selectedSensor: sensorID });
