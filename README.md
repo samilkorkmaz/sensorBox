@@ -1,5 +1,5 @@
-# sensorBox
 Server side code to display sensor data as time plots. To see plots, navigate to https://samilkorkmaz.com.
+![image](https://github.com/samilkorkmaz/sensorBox/assets/9883871/7824d4fc-cd0b-4a9f-82d8-eae4b59d00ab)
 
 User interaction with web page is handled via [socket.io](https://socket.io/)
 
